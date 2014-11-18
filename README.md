@@ -2,7 +2,7 @@
 
 [![Twitter](http://img.shields.io/badge/contact-@alexruperez-blue.svg?style=flat)](http://twitter.com/alexruperez)
 [![GitHub Issues](http://img.shields.io/github/issues/alexruperez/PFLinkedInUtils.svg?style=flat)](http://github.com/alexruperez/PFLinkedInUtils/issues)
-[![CI Status](http://img.shields.io/travis/alexruperez/PFLinkedInUtils.svg?style=flat)](https://travis-ci.org/alexruperez/PFLinkedInUtils)
+[![Dependency Status](https://www.versioneye.com/user/projects/546b3c55fe9b66a276000082/badge.svg?style=flat)](https://www.versioneye.com/user/projects/546b3c55fe9b66a276000082)
 [![Version](https://img.shields.io/cocoapods/v/PFLinkedInUtils.svg?style=flat)](http://cocoadocs.org/docsets/PFLinkedInUtils)
 [![License](https://img.shields.io/cocoapods/l/PFLinkedInUtils.svg?style=flat)](http://cocoadocs.org/docsets/PFLinkedInUtils)
 [![Platform](https://img.shields.io/cocoapods/p/PFLinkedInUtils.svg?style=flat)](http://cocoadocs.org/docsets/PFLinkedInUtils)
