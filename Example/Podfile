@@ -1,0 +1,11 @@
+source 'https://github.com/CocoaPods/Specs.git'
+
+target 'PFLinkedInUtils', :exclusive => true do
+  pod "PFLinkedInUtils", :path => "../"
+end
+
+target 'Tests', :exclusive => true do
+  pod "PFLinkedInUtils", :path => "../"
+
+  
+end

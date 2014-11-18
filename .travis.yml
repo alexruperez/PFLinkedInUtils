@@ -1,0 +1,8 @@
+# reference: http://www.objc.io/issue-6/travis-ci.html
+
+language: objective-c
+before_install:
+  - brew update
+  - if brew outdated | grep -qx xctool; then brew upgrade xctool; fi
+script:
+- xctool test -workspace Example/PFLinkedInUtils.xcworkspace -scheme PFLinkedInUtils -sdk iphonesimulator ONLY_ACTIVE_ARCH=NO
