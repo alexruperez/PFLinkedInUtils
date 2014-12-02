@@ -164,7 +164,7 @@ NSInteger const kPFErrorLinkedInInvalidSession = 351;
         [self.linkedInHttpClient getAccessToken:authorizationCode success:^(NSDictionary *accessTokenDictionary) {
             if (block)
             {
-                block(accessTokenDictionary[@"accessToken"], nil);
+                block(accessTokenDictionary[@"access_token"], nil);
             }
         } failure:^(NSError *accessTokenError) {
             if (block)
