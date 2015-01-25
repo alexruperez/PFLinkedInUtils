@@ -47,7 +47,7 @@ NSInteger const kPFErrorLinkedInInvalidSession = 351;
         [self getProfileIDWithAccessToken:accessToken block:^(NSString *profileID, NSError *profileError) {
             if (profileID && !profileError)
             {
-                [self createUserWithAccessToken:accessToken expirationDate:expirationDate profileID:profileID block:block];
+                [self logInOrSignUpUserWithAccessToken:accessToken expirationDate:expirationDate profileID:profileID block:block];
             }
             else if (block)
             {
@@ -64,7 +64,7 @@ NSInteger const kPFErrorLinkedInInvalidSession = 351;
                     if (profileID && !profileError)
                     {
                         NSDate *expirationDate = self.linkedInAccessTokenExpirationDate;
-                        [self createUserWithAccessToken:accessToken expirationDate:expirationDate profileID:profileID block:block];
+                        [self logInOrSignUpUserWithAccessToken:accessToken expirationDate:expirationDate profileID:profileID block:block];
                     }
                     else if (block)
                     {
@@ -228,7 +228,43 @@ NSInteger const kPFErrorLinkedInInvalidSession = 351;
     }];
 }
 
-+ (void)createUserWithAccessToken:(NSString *)accessToken expirationDate:(NSDate *)expirationDate profileID:(NSString *)profileID block:(PFUserResultBlock)block
++ (void)logInOrSignUpUserWithAccessToken:(NSString *)accessToken expirationDate:(NSDate *)expirationDate profileID:(NSString *)profileID block:(PFUserResultBlock)block
+{
+    if (accessToken && expirationDate && profileID)
+    {
+        PFQuery *profileQuery = [PFQuery queryWithClassName:@"LinkedInUser"];
+        [profileQuery whereKey:@"userId" equalTo:profileID];
+        
+        [profileQuery findObjectsInBackgroundWithBlock:^(NSArray *objects, NSError *queryError) {
+            if (!queryError)
+            {
+                if (objects.count == 0)
+                {
+                    [self signUpUserWithAccessToken:accessToken expirationDate:expirationDate profileID:profileID block:block];
+                }
+                else
+                {
+                    PFObject *linkedInUser = objects.firstObject;
+                    PFObject *userObject = [linkedInUser objectForKey:@"user"];
+                    [userObject fetchIfNeededInBackgroundWithBlock:^(PFObject *object, NSError *error) {
+                        PFUser *user = (PFUser *)object;
+                        [PFUser logInWithUsernameInBackground:user.username password:@"(undefined)" block:block];
+                    }];
+                }
+            }
+            else if (block)
+            {
+                block(nil, queryError);
+            }
+        }];
+    }
+    else if (block)
+    {
+        block(nil, [NSError errorWithDomain:PFParseErrorDomain code:kPFErrorLinkedInIdMissing userInfo:@{NSLocalizedDescriptionKey : @"LinkedIn Id Missing"}]);
+    }
+}
+
++ (void)signUpUserWithAccessToken:(NSString *)accessToken expirationDate:(NSDate *)expirationDate profileID:(NSString *)profileID block:(PFUserResultBlock)block
 {
     if (accessToken && expirationDate && profileID)
     {
