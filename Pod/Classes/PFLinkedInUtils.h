@@ -105,4 +105,13 @@ extern NSInteger const kPFErrorLinkedInInvalidSession;
  */
 + (void)unlinkUser:(PFUser *)user block:(PFBooleanResultBlock)block;
 
+///--------------------------------------
+/// @name Logging Out
+///--------------------------------------
+
+/*!
+ @abstract *Synchronously* logs out the currently logged in user on disk.
+ */
++ (BOOL)logOut;
+
 @end

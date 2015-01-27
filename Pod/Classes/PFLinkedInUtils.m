@@ -15,6 +15,12 @@ NSInteger const kPFErrorLinkedInAccountAlreadyLinked = 308;
 NSInteger const kPFErrorLinkedInIdMissing = 350;
 NSInteger const kPFErrorLinkedInInvalidSession = 351;
 
+
+NSString *kPFLinkedInTokenKey = @"linkedin_token";
+NSString *kPFLinkedInExpirationKey = @"linkedin_expiration";
+NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
+
+
 @interface PFLinkedInUtils ()
 
 @property (strong, nonatomic) LIALinkedInHttpClient *linkedInHttpClient;
@@ -131,7 +137,21 @@ NSInteger const kPFErrorLinkedInInvalidSession = 351;
         [user saveInBackgroundWithBlock:^(BOOL succeeded, NSError *userError) {
             if (succeeded)
             {
-                [linkedInUser deleteInBackgroundWithBlock:block];
+                [linkedInUser deleteInBackgroundWithBlock:^(BOOL succeeded, NSError *error) {
+                    if (succeeded)
+                    {
+                        BOOL clearResult = [self clearUserDefaults];
+                        
+                        if (block)
+                        {
+                            block(clearResult, nil);
+                        }
+                    }
+                    else if (block)
+                    {
+                        block(NO, error);
+                    }
+                }];
             }
             else if (block)
             {
@@ -145,7 +165,22 @@ NSInteger const kPFErrorLinkedInInvalidSession = 351;
     }
 }
 
++ (BOOL)logOut
+{
+    [PFUser logOut];
+    return [self clearUserDefaults];
+}
+
 #pragma mark - Private
+
++ (BOOL)clearUserDefaults
+{
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    [userDefaults removeObjectForKey:kPFLinkedInTokenKey];
+    [userDefaults removeObjectForKey:kPFLinkedInExpirationKey];
+    [userDefaults removeObjectForKey:kPFLinkedInCreationKey];
+    return [userDefaults synchronize];
+}
 
 + (PFLinkedInUtils *)sharedInstance
 {
@@ -356,12 +391,12 @@ NSInteger const kPFErrorLinkedInInvalidSession = 351;
 
 + (NSString *)linkedInAccessToken
 {
-    return [[NSUserDefaults standardUserDefaults] stringForKey:@"linkedin_token"];
+    return [[NSUserDefaults standardUserDefaults] stringForKey:kPFLinkedInTokenKey];
 }
 
 + (NSDate *)linkedInAccessTokenExpirationDate
 {
-    return [NSDate dateWithTimeIntervalSince1970:([[NSUserDefaults standardUserDefaults] doubleForKey:@"linkedin_token_created_at"] + [[NSUserDefaults standardUserDefaults] doubleForKey:@"linkedin_expiration"])];
+    return [NSDate dateWithTimeIntervalSince1970:([[NSUserDefaults standardUserDefaults] doubleForKey:kPFLinkedInCreationKey] + [[NSUserDefaults standardUserDefaults] doubleForKey:kPFLinkedInExpirationKey])];
 }
 
 @end
