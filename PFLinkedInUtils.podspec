@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = "PFLinkedInUtils"
-  s.version          = "0.1.3"
+  s.version          = "0.1.4"
   s.summary          = "The PFLinkedInUtils class provides utility functions for working with LinkedIn in a Parse application."
   s.description      = <<-DESC
 											 The PFLinkedInUtils class provides utility functions for working with LinkedIn in a Parse application.

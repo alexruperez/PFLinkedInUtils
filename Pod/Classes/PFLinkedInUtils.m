@@ -356,8 +356,17 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
                 if (objects.count == 0)
                 {
                     PFObject *linkedInUser = [PFObject objectWithClassName:@"LinkedInUser" dictionary:@{@"userId" : profileID, @"accessToken" : accessToken, @"expirationDate" : expirationDate, @"user" : user}];
-                    [user setObject:linkedInUser forKey:@"linkedInUser"];
-                    [user saveInBackgroundWithBlock:block];
+                    [linkedInUser saveInBackgroundWithBlock:^(BOOL succeeded, NSError *saveError) {
+                        if (succeeded)
+                        {
+                            [user setObject:linkedInUser forKey:@"linkedInUser"];
+                            [user saveInBackgroundWithBlock:block];
+                        }
+                        else if (block)
+                        {
+                            block(NO, saveError);
+                        }
+                    }];
                 }
                 else if (block)
                 {
