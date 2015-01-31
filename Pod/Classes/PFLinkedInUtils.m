@@ -283,7 +283,7 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
                     PFObject *userObject = [linkedInUser objectForKey:@"user"];
                     [userObject fetchIfNeededInBackgroundWithBlock:^(PFObject *object, NSError *error) {
                         PFUser *user = (PFUser *)object;
-                        [PFUser logInWithUsernameInBackground:user.username password:@"(undefined)" block:block];
+                        [PFUser logInWithUsernameInBackground:user.username password:profileID block:block];
                     }];
                 }
             }
@@ -305,7 +305,7 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
     {
         PFUser *user = [PFUser user];
         user.username = [self randomStringWithLength:25];
-        user.password = @"(undefined)";
+        user.password = profileID;
         [user signUpInBackgroundWithBlock:^(BOOL signUpSucceeded, NSError *signUpError) {
             if (signUpSucceeded && !signUpError)
             {
@@ -360,6 +360,7 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
                         if (succeeded)
                         {
                             [user setObject:linkedInUser forKey:@"linkedInUser"];
+                            user.password = profileID;
                             [user saveInBackgroundWithBlock:block];
                         }
                         else if (block)

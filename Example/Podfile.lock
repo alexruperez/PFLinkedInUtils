@@ -25,7 +25,7 @@ PODS:
     - AFNetworking (>= 2.0.0)
   - Parse (1.6.2):
     - Bolts (~> 1.1)
-  - PFLinkedInUtils (0.1.4):
+  - PFLinkedInUtils (0.1.5):
     - IOSLinkedInAPI (~> 2.0)
     - Parse (~> 1.6)
 
@@ -41,6 +41,6 @@ SPEC CHECKSUMS:
   Bolts: 3db0a875235e0c9042b013af13af0f00f79b102c
   IOSLinkedInAPI: 5b400668a260a3594af94e363ade95933ce22db8
   Parse: 60d65108fe39da77ec16c9e51d74b4d296b21424
-  PFLinkedInUtils: 955b654e357a41e443db764fb56dae07ced5b221
+  PFLinkedInUtils: e91420f5ed2ed8ace122eb1ecf6b04d82e9cb6ee
 
 COCOAPODS: 0.35.0
