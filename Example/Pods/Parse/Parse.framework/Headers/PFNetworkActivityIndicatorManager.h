@@ -6,6 +6,10 @@
 
 #import <Foundation/Foundation.h>
 
+#import <Parse/PFNullability.h>
+
+PF_ASSUME_NONNULL_BEGIN
+
 /*!
  `PFNetworkActivityIndicatorManager` manages the state of the network activity indicator in the status bar.
  When enabled, it will start managing the network activity indicator in the status bar,
@@ -58,3 +62,5 @@
 - (void)decrementActivityCount;
 
 @end
+
+PF_ASSUME_NONNULL_END

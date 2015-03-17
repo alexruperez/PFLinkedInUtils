@@ -50,6 +50,8 @@
 
 #endif
 
+PF_ASSUME_NONNULL_BEGIN
+
 /*!
  The `Parse` class contains static functions that handle global configuration for the Parse framework.
  */
@@ -147,3 +149,5 @@
 + (PFLogLevel)logLevel;
 
 @end
+
+PF_ASSUME_NONNULL_END

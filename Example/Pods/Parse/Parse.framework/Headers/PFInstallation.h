@@ -6,8 +6,11 @@
 
 #import <Foundation/Foundation.h>
 
+#import <Parse/PFNullability.h>
 #import <Parse/PFObject.h>
 #import <Parse/PFSubclassing.h>
+
+PF_ASSUME_NONNULL_BEGIN
 
 /*!
  A Parse Framework Installation Object that is a local representation of an
@@ -49,7 +52,7 @@
  @discussion The resulting query can only be used for targeting a <PFPush>.
  Calling find methods on the resulting query will raise an exception.
  */
-+ (PFQuery *)query;
++ (PF_NULLABLE PFQuery *)query;
 
 ///--------------------------------------
 /// @name Accessing the Current Installation
@@ -71,7 +74,7 @@
 
  @param deviceTokenData A token that identifies the device.
  */
-- (void)setDeviceTokenFromData:(NSData *)deviceTokenData;
+- (void)setDeviceTokenFromData:(PF_NULLABLE NSData *)deviceTokenData;
 
 ///--------------------------------------
 /// @name Installation Properties
@@ -90,7 +93,7 @@
 /*!
  @abstract The device token for the `PFInstallation`.
  */
-@property (nonatomic, strong) NSString *deviceToken;
+@property (PF_NULLABLE_PROPERTY nonatomic, strong) NSString *deviceToken;
 
 /*!
  @abstract The badge for the `PFInstallation`.
@@ -100,11 +103,13 @@
 /*!
  @abstract The name of the time zone for the `PFInstallation`.
  */
-@property (nonatomic, strong, readonly) NSString *timeZone;
+@property (PF_NULLABLE_PROPERTY nonatomic, strong, readonly) NSString *timeZone;
 
 /*!
  @abstract The channels for the `PFInstallation`.
  */
-@property (nonatomic, strong) NSArray *channels;
+@property (PF_NULLABLE_PROPERTY nonatomic, strong) NSArray *channels;
 
 @end
+
+PF_ASSUME_NONNULL_END

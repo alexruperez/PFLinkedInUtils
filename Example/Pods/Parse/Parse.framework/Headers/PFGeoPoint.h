@@ -7,10 +7,22 @@
 #import <Foundation/Foundation.h>
 #import <CoreLocation/CoreLocation.h>
 
+#if TARGET_OS_IPHONE
+#import <Parse/PFNullability.h>
+#else
+#import <ParseOSX/PFNullability.h>
+#endif
+
+PF_ASSUME_NONNULL_BEGIN
+
+@class PFGeoPoint;
+
+typedef void(^PFGeoPointResultBlock)(PF_NULLABLE_S PFGeoPoint *geoPoint, PF_NULLABLE_S NSError *error);
+
 /*!
  `PFGeoPoint` may be used to embed a latitude / longitude point as the value for a key in a <PFObject>.
  It could be used to perform queries in a geospatial manner using <[PFQuery whereKey:nearGeoPoint:]>.
- 
+
  Currently, instances of <PFObject> may only have one key associated with a `PFGeoPoint` type.
  */
 @interface PFGeoPoint : NSObject <NSCopying, NSCoding>
@@ -33,7 +45,7 @@
 
  @returns Returns a new PFGeoPoint at specified location.
  */
-+ (PFGeoPoint *)geoPointWithLocation:(CLLocation *)location;
++ (PFGeoPoint *)geoPointWithLocation:(PF_NULLABLE CLLocation *)location;
 
 /*!
  @abstract Create a new `PFGeoPoint` object with the specified latitude and longitude.
@@ -51,7 +63,7 @@
  @param geoPointHandler A block which takes the newly created `PFGeoPoint` as an argument.
  It should have the following argument signature: `^(PFGeoPoint *geoPoint, NSError *error)`
  */
-+ (void)geoPointForCurrentLocationInBackground:(void(^)(PFGeoPoint *geoPoint, NSError *error))geoPointHandler;
++ (void)geoPointForCurrentLocationInBackground:(PF_NULLABLE PFGeoPointResultBlock)geoPointHandler;
 
 ///--------------------------------------
 /// @name Controlling Position
@@ -78,7 +90,7 @@
 
  @returns Distance in radians between the receiver and `point`.
  */
-- (double)distanceInRadiansTo:(PFGeoPoint *)point;
+- (double)distanceInRadiansTo:(PF_NULLABLE PFGeoPoint *)point;
 
 /*!
  @abstract Get distance in miles from this point to specified point.
@@ -87,7 +99,7 @@
 
  @returns Distance in miles between the receiver and `point`.
  */
-- (double)distanceInMilesTo:(PFGeoPoint *)point;
+- (double)distanceInMilesTo:(PF_NULLABLE PFGeoPoint *)point;
 
 /*!
  @abstract Get distance in kilometers from this point to specified point.
@@ -96,6 +108,8 @@
 
  @returns Distance in kilometers between the receiver and `point`.
  */
-- (double)distanceInKilometersTo:(PFGeoPoint *)point;
+- (double)distanceInKilometersTo:(PF_NULLABLE PFGeoPoint *)point;
 
 @end
+
+PF_ASSUME_NONNULL_END

@@ -10,6 +10,16 @@
 
 #import <Foundation/Foundation.h>
 
+/*!
+ Error domain used if there was multiple errors on <BFTask taskForCompletionOfAllTasks:>.
+ */
+extern NSString *const BFTaskErrorDomain;
+
+/*!
+ An exception that is thrown if there was multiple exceptions on <BFTask taskForCompletionOfAllTasks:>.
+ */
+extern NSString *const BFTaskMultipleExceptionsException;
+
 @class BFExecutor;
 @class BFTask;
 
@@ -56,6 +66,14 @@ typedef id(^BFContinuationBlock)(BFTask *task);
 + (instancetype)taskForCompletionOfAllTasks:(NSArray *)tasks;
 
 /*!
+ Returns a task that will be completed once all of the input tasks have completed.
+ If all tasks complete successfully without being faulted or cancelled the result will be
+ an `NSArray` of all task results in the order they were provided.
+ @param tasks An `NSArray` of the tasks to use as an input.
+ */
++ (instancetype)taskForCompletionOfAllTasksWithResults:(NSArray *)tasks;
+
+/*!
  Returns a task that will be completed a certain amount of time in the future.
  @param millis The approximate number of milliseconds to wait before the
  task will be finished (with result == nil).
@@ -99,6 +117,11 @@ typedef id(^BFContinuationBlock)(BFTask *task);
 @property (nonatomic, assign, readonly, getter = isCancelled) BOOL cancelled;
 
 /*!
+ Whether this task has completed due to an error or exception.
+ */
+@property (nonatomic, assign, readonly, getter = isFaulted) BOOL faulted;
+
+/*!
  Whether this task has completed.
  */
 @property (nonatomic, assign, readonly, getter = isCompleted) BOOL completed;
@@ -126,7 +149,7 @@ typedef id(^BFContinuationBlock)(BFTask *task);
  this method will not be completed until that task is completed.
  */
 - (instancetype)continueWithExecutor:(BFExecutor *)executor
-                       withBlock:(BFContinuationBlock)block;
+                           withBlock:(BFContinuationBlock)block;
 
 /*!
  Identical to continueWithBlock:, except that the block is only run
@@ -153,7 +176,7 @@ typedef id(^BFContinuationBlock)(BFTask *task);
  this method will not be completed until that task is completed.
  */
 - (instancetype)continueWithExecutor:(BFExecutor *)executor
-                withSuccessBlock:(BFContinuationBlock)block;
+                    withSuccessBlock:(BFContinuationBlock)block;
 
 /*!
  Waits until this operation is completed.
