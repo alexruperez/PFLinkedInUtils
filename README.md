@@ -47,7 +47,7 @@ To run the example project, clone the repo, and run `pod install` from the Examp
 [PFLinkedInUtils logInWithBlock:^(PFUser *user, NSError *error) {
     NSLog(@"User: %@, Error: %@", user, error);
 
-    [self.linkedInHttpClient GET:@"LINKEDIN_API_URL" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+    [PFLinkedInUtils.linkedInHttpClient GET:@"LINKEDIN_API_URL" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
 		    NSLog(@"Response JSON: %@", responseObject);
 		} failure:^(AFHTTPRequestOperation *operation, NSError *error) {
 		    NSLog(@"Error: %@", error);
