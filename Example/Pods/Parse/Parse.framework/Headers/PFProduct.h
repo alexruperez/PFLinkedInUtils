@@ -20,22 +20,6 @@ PF_ASSUME_NONNULL_BEGIN
  */
 @interface PFProduct : PFObject<PFSubclassing>
 
-/*!
- @abstract The name of the Installation class in the REST API.
-
- @discussion This is a required PFSubclassing method.
- */
-+ (NSString *)parseClassName;
-
-///--------------------------------------
-/// @name Querying for Products
-///--------------------------------------
-
-/*!
- @abstract A <PFQuery> that could be used to fetch all product instances from Parse.
- */
-+ (PF_NULLABLE PFQuery *)query;
-
 ///--------------------------------------
 /// @name Product-specific Properties
 ///--------------------------------------

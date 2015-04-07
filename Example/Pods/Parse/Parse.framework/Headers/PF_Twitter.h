@@ -65,7 +65,7 @@ PF_ASSUME_NONNULL_BEGIN
  @param cancel Invoked when the user cancels authorization.
  */
 - (void)authorizeWithSuccess:(PF_NULLABLE void (^)(void))success
-                     failure:(PF_NULLABLE void (^)(PF_NULLABLE_S NSError *error))failure
+                     failure:(PF_NULLABLE void (^)(NSError *PF_NULLABLE_S error))failure
                       cancel:(PF_NULLABLE void (^)(void))cancel;
 
 /*!

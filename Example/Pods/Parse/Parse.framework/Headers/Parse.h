@@ -21,10 +21,12 @@
 #import <Parse/PFQuery.h>
 #import <Parse/PFRelation.h>
 #import <Parse/PFRole.h>
+#import <Parse/PFSession.h>
 #import <Parse/PFSubclassing.h>
 #import <Parse/PFUser.h>
 #import <Parse/PFInstallation.h>
 #import <Parse/PFNetworkActivityIndicatorManager.h>
+#import <Parse/PFNullability.h>
 #import <Parse/PFProduct.h>
 #import <Parse/PFPurchase.h>
 #import <Parse/PFPush.h>
@@ -40,11 +42,13 @@
 #import <ParseOSX/PFConstants.h>
 #import <ParseOSX/PFFile.h>
 #import <ParseOSX/PFGeoPoint.h>
+#import <ParseOSX/PFNullability.h>
 #import <ParseOSX/PFObject+Subclass.h>
 #import <ParseOSX/PFObject.h>
 #import <ParseOSX/PFQuery.h>
 #import <ParseOSX/PFRelation.h>
 #import <ParseOSX/PFRole.h>
+#import <ParseOSX/PFSession.h>
 #import <ParseOSX/PFSubclassing.h>
 #import <ParseOSX/PFUser.h>
 
@@ -107,16 +111,20 @@ PF_ASSUME_NONNULL_BEGIN
 
  @param enabled Whether a `UIAlertView` should be shown when the device is offline
  and network access is required from a view or view controller.
+
+ @deprecated This method has no effect.
  */
-+ (void)offlineMessagesEnabled:(BOOL)enabled;
++ (void)offlineMessagesEnabled:(BOOL)enabled PARSE_DEPRECATED("This method is deprecated and has no effect.");
 
 /*!
  @abstract Set whether to show an error message when using a Parse view or view controller related classes
  and a Parse error was generated via a query.
 
  @param enabled Whether a `UIAlertView` should be shown when an error occurs.
+
+ @deprecated This method has no effect.
  */
-+ (void)errorMessagesEnabled:(BOOL)enabled;
++ (void)errorMessagesEnabled:(BOOL)enabled PARSE_DEPRECATED("This method is deprecated and has no effect.");
 
 #endif
 

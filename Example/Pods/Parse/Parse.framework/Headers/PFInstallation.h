@@ -35,25 +35,6 @@ PF_ASSUME_NONNULL_BEGIN
 
 @interface PFInstallation : PFObject<PFSubclassing>
 
-/*!
- @abstract The name of the Installation class in the REST API.
-
- @discussion This is a required PFSubclassing method.
- */
-+ (NSString *)parseClassName;
-
-///--------------------------------------
-/// @name Targeting Installations
-///--------------------------------------
-
-/*!
- @abstract Creates a <PFQuery> for `PFInstallation` objects.
-
- @discussion The resulting query can only be used for targeting a <PFPush>.
- Calling find methods on the resulting query will raise an exception.
- */
-+ (PF_NULLABLE PFQuery *)query;
-
 ///--------------------------------------
 /// @name Accessing the Current Installation
 ///--------------------------------------
@@ -68,13 +49,6 @@ PF_ASSUME_NONNULL_BEGIN
  @result Returns a `PFInstallation` that represents the currently-running installation.
  */
 + (instancetype)currentInstallation;
-
-/*!
- @abstract Sets the device token string property from an `NSData`-encoded token.
-
- @param deviceTokenData A token that identifies the device.
- */
-- (void)setDeviceTokenFromData:(PF_NULLABLE NSData *)deviceTokenData;
 
 ///--------------------------------------
 /// @name Installation Properties
@@ -109,6 +83,30 @@ PF_ASSUME_NONNULL_BEGIN
  @abstract The channels for the `PFInstallation`.
  */
 @property (PF_NULLABLE_PROPERTY nonatomic, strong) NSArray *channels;
+
+/*!
+ @abstract Sets the device token string property from an `NSData`-encoded token.
+
+ @param deviceTokenData A token that identifies the device.
+ */
+- (void)setDeviceTokenFromData:(PF_NULLABLE NSData *)deviceTokenData;
+
+///--------------------------------------
+/// @name Querying for Installations
+///--------------------------------------
+
+/*!
+ @abstract Creates a <PFQuery> for `PFInstallation` objects.
+
+ @discussion Only the following types of queries are allowed for installations:
+
+ - `[query getObjectWithId:<value>]`
+ - `[query whereKey:@"installationId" equalTo:<value>]`
+ - `[query whereKey:@"installationId" matchesKey:<key in query> inQuery:<query>]`
+
+ You can add additional query conditions, but one of the above must appear as a top-level `AND` clause in the query.
+ */
++ (PF_NULLABLE PFQuery *)query;
 
 @end
 

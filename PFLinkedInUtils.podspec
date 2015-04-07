@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = "PFLinkedInUtils"
-  s.version          = "0.1.6"
+  s.version          = "0.1.7"
   s.summary          = "The PFLinkedInUtils class provides utility functions for working with LinkedIn in a Parse application."
   s.description      = <<-DESC
 											 The PFLinkedInUtils class provides utility functions for working with LinkedIn in a Parse application.
@@ -24,6 +24,6 @@ Pod::Spec.new do |s|
     'PFLinkedInUtils' => ['Pod/Assets/*.png']
   }
 	
-  s.dependency 'Parse', '~> 1.6'
+  s.dependency 'Parse', '~> 1.7'
   s.dependency 'IOSLinkedInAPI', '~> 2.0'
 end

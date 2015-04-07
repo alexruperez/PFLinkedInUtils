@@ -40,11 +40,11 @@ NS_REQUIRES_PROPERTY_DEFINITIONS
     // Every time a save is started, a new dictionary is added to the end.
     // Whenever a save completes, the new data is put into fetchedData, and
     // a dictionary is removed from the start.
-    PF_NULLABLE_S NSMutableArray *operationSetQueue;
+    NSMutableArray *PF_NULLABLE_S operationSetQueue;
 
     // Our best estimate as to what the current data is, based on
     // the last fetch from the server, and the set of pending operations.
-    PF_NULLABLE_S NSMutableDictionary *estimatedData;
+    NSMutableDictionary *PF_NULLABLE_S estimatedData;
 }
 
 ///--------------------------------------
@@ -148,8 +148,13 @@ NS_REQUIRES_PROPERTY_DEFINITIONS
 /*!
  @abstract Sets the object associated with a given key.
 
- @param object The object.
- @param key The key.
+ @param object The object for `key`. A strong reference to the object is maintaned by PFObject.
+ Raises an `NSInvalidArgumentException` if `object` is `nil`.
+ If you need to represent a `nil` value - use `NSNull`.
+ @param key The key for `object`.
+ Raises an `NSInvalidArgumentException` if `key` is `nil`.
+
+ @see setObject:forKeyedSubscript:
  */
 - (void)setObject:(id)object forKey:(NSString *)key;
 
@@ -166,9 +171,9 @@ NS_REQUIRES_PROPERTY_DEFINITIONS
  @discussion This method enables usage of literal syntax on `PFObject`.
  E.g. `NSString *value = object[@"key"];`
 
- @see objectForKey:
-
  @param key The key for which to return the corresponding value.
+
+ @see objectForKey:
  */
 - (PF_NULLABLE_S id)objectForKeyedSubscript:(NSString *)key;
 
@@ -178,12 +183,15 @@ NS_REQUIRES_PROPERTY_DEFINITIONS
  @discussion This method enables usage of literal syntax on `PFObject`.
  E.g. `object[@"key"] = @"value";`
 
- @see setObject:forKey:
+ @param object The object for `key`. A strong reference to the object is maintaned by PFObject.
+ Raises an `NSInvalidArgumentException` if `object` is `nil`.
+ If you need to represent a `nil` value - use `NSNull`.
+ @param key The key for `object`.
+ Raises an `NSInvalidArgumentException` if `key` is `nil`.
 
- @param object The object.
- @param key The key.
+ @see setObject:forKey:
  */
-- (void)setObject:(id)object forKeyedSubscript:(NSString *)key;
+- (void)setObject:(PF_NULLABLE_S id)object forKeyedSubscript:(NSString *)key;
 
 /*!
  @abstract Returns the relation object associated with the given key.
