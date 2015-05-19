@@ -1,12 +1,11 @@
 # PFLinkedInUtils
 [![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/alexruperez/PFLinkedInUtils?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 [![Twitter](http://img.shields.io/badge/contact-@alexruperez-blue.svg?style=flat)](http://twitter.com/alexruperez)
 [![GitHub Issues](http://img.shields.io/github/issues/alexruperez/PFLinkedInUtils.svg?style=flat)](http://github.com/alexruperez/PFLinkedInUtils/issues)
-[![Dependency Status](https://www.versioneye.com/objective-c/pflinkedinutils/0.1.5/badge.svg?style=flat)](https://www.versioneye.com/objective-c/pflinkedinutils/0.1.5)
 [![Version](https://img.shields.io/cocoapods/v/PFLinkedInUtils.svg?style=flat)](http://cocoadocs.org/docsets/PFLinkedInUtils)
 [![License](https://img.shields.io/cocoapods/l/PFLinkedInUtils.svg?style=flat)](http://cocoadocs.org/docsets/PFLinkedInUtils)
 [![Platform](https://img.shields.io/cocoapods/p/PFLinkedInUtils.svg?style=flat)](http://cocoadocs.org/docsets/PFLinkedInUtils)
+[![Dependency Status](https://www.versioneye.com/user/projects/555b03e7634daa30fb0001eb/badge.svg?style=flat)](https://www.versioneye.com/user/projects/555b03e7634daa30fb0001eb)
 [![Analytics](https://ga-beacon.appspot.com/UA-55329295-1/PFLinkedInUtils/readme?pixel)](https://github.com/igrigorik/ga-beacon)
 
 ## Overview
