@@ -15,9 +15,9 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-    [Parse setApplicationId:@"PARSE_APP_ID" clientKey:@"PARSE_CLIENT_SECRET"];
+    [Parse setApplicationId:@"PARSE_APP_ID" clientKey:@"PARSE_CLIENT_KEY"];
 
-    [PFLinkedInUtils initializeWithRedirectURL:@"LINKEDIN_REDIRECT_URL" clientId:@"LINKEDIN_CLIENT_ID" clientSecret:@"LINKEDIN_CLIENT_SECRET" state:@"DCEEFWF45453sdffef424" grantedAccess:@[@"r_fullprofile", @"r_network"] presentingViewController:nil];
+    [PFLinkedInUtils initializeWithRedirectURL:@"LINKEDIN_REDIRECT_URL" clientId:@"LINKEDIN_CLIENT_ID" clientSecret:@"LINKEDIN_CLIENT_SECRET" state:@"DCEEFWF45453sdffef424" grantedAccess:@[@"r_basicprofile"] presentingViewController:nil];
 
     return YES;
 }

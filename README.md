@@ -12,6 +12,9 @@
 
 The PFLinkedInUtils class provides utility functions for working with LinkedIn in a Parse application.
 
+*Note:* As of the 12´ May 2015 LinkedIn applied restrictions to API usage for all non partners:
+See: https://developer.linkedin.com/blog/posts/2015/developer-program-changes
+
 This class is currently for iOS only.
 
 ![PFLinkedInUtils Screenshot](https://raw.githubusercontent.com/alexruperez/PFLinkedInUtils/master/screenshot.png)

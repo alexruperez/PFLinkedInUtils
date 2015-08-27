@@ -304,8 +304,8 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
     if (accessToken && expirationDate && profileID)
     {
         PFUser *user = [PFUser user];
-        [user setObject:[self randomStringWithLength:25] forKey:@"username"];
-        [user setObject:profileID forKey:@"password"];
+        user.username = [self randomStringWithLength:25];
+        user.password = profileID;
         [user signUpInBackgroundWithBlock:^(BOOL signUpSucceeded, NSError *signUpError) {
             if (signUpSucceeded && !signUpError)
             {
