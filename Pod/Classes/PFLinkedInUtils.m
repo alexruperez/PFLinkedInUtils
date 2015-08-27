@@ -99,7 +99,7 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
             }
             else if (block)
             {
-                block(nil, profileError);
+                block(NO, profileError);
             }
         }];
     }
@@ -116,13 +116,13 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
                     }
                     else if (block)
                     {
-                        block(nil, profileError);
+                        block(NO, profileError);
                     }
                 }];
             }
             else if (block)
             {
-                block(nil, accessTokenError);
+                block(NO, accessTokenError);
             }
         }];
     }
