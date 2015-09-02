@@ -50,33 +50,14 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
     NSDate *expirationDate = self.linkedInAccessTokenExpirationDate;
     if (accessToken && expirationDate && [self.linkedInHttpClient validToken])
     {
-        [self getProfileIDWithAccessToken:accessToken block:^(NSString *profileID, NSError *profileError) {
-            if (profileID && !profileError)
-            {
-                [self logInOrSignUpUserWithAccessToken:accessToken expirationDate:expirationDate profileID:profileID block:block];
-            }
-            else if (block)
-            {
-                block(nil, profileError);
-            }
-        }];
+        [self logInOrSignUpUserWithAccessToken:accessToken expirationDate:expirationDate block:block];
     }
     else
     {
         [self getAccessTokenWithBlock:^(NSString *accessToken, NSError *accessTokenError) {
             if (accessToken && !accessTokenError)
             {
-                [self getProfileIDWithAccessToken:accessToken block:^(NSString *profileID, NSError *profileError) {
-                    if (profileID && !profileError)
-                    {
-                        NSDate *expirationDate = self.linkedInAccessTokenExpirationDate;
-                        [self logInOrSignUpUserWithAccessToken:accessToken expirationDate:expirationDate profileID:profileID block:block];
-                    }
-                    else if (block)
-                    {
-                        block(nil, profileError);
-                    }
-                }];
+                [self logInOrSignUpUserWithAccessToken:accessToken expirationDate:self.linkedInAccessTokenExpirationDate block:block];
             }
             else if (block)
             {
@@ -92,33 +73,14 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
     NSDate *expirationDate = self.linkedInAccessTokenExpirationDate;
     if (accessToken && expirationDate && [self.linkedInHttpClient validToken])
     {
-        [self getProfileIDWithAccessToken:accessToken block:^(NSString *profileID, NSError *profileError) {
-            if (profileID && !profileError)
-            {
-                [self linkUser:user accessToken:accessToken expirationDate:expirationDate profileID:profileID block:block];
-            }
-            else if (block)
-            {
-                block(NO, profileError);
-            }
-        }];
+        [self linkUser:user accessToken:accessToken expirationDate:expirationDate block:block];
     }
     else
     {
         [self getAccessTokenWithBlock:^(NSString *accessToken, NSError *accessTokenError) {
             if (accessToken && !accessTokenError)
             {
-                [self getProfileIDWithAccessToken:accessToken block:^(NSString *profileID, NSError *profileError) {
-                    if (profileID && !profileError)
-                    {
-                        NSDate *expirationDate = self.linkedInAccessTokenExpirationDate;
-                        [self linkUser:user accessToken:accessToken expirationDate:expirationDate profileID:profileID block:block];
-                    }
-                    else if (block)
-                    {
-                        block(NO, profileError);
-                    }
-                }];
+                [self linkUser:user accessToken:accessToken expirationDate:self.linkedInAccessTokenExpirationDate block:block];
             }
             else if (block)
             {
@@ -263,6 +225,20 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
     }];
 }
 
++ (void)logInOrSignUpUserWithAccessToken:(NSString *)accessToken expirationDate:(NSDate *)expirationDate block:(PFUserResultBlock)block
+{
+    [self getProfileIDWithAccessToken:accessToken block:^(NSString *profileID, NSError *profileError) {
+        if (profileID && !profileError)
+        {
+            [self logInOrSignUpUserWithAccessToken:accessToken expirationDate:expirationDate profileID:profileID block:block];
+        }
+        else if (block)
+        {
+            block(nil, profileError);
+        }
+    }];
+}
+
 + (void)logInOrSignUpUserWithAccessToken:(NSString *)accessToken expirationDate:(NSDate *)expirationDate profileID:(NSString *)profileID block:(PFUserResultBlock)block
 {
     if (accessToken && expirationDate && profileID)
@@ -338,6 +314,20 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
     {
         block(nil, [NSError errorWithDomain:PFParseErrorDomain code:kPFErrorLinkedInIdMissing userInfo:@{NSLocalizedDescriptionKey : @"LinkedIn Id Missing"}]);
     }
+}
+
++ (void)linkUser:(PFUser *)user accessToken:(NSString *)accessToken expirationDate:(NSDate *)expirationDate block:(PFBooleanResultBlock)block
+{
+    [self getProfileIDWithAccessToken:accessToken block:^(NSString *profileID, NSError *profileError) {
+        if (profileID && !profileError)
+        {
+            [self linkUser:user accessToken:accessToken expirationDate:expirationDate profileID:profileID block:block];
+        }
+        else if (block)
+        {
+            block(NO, profileError);
+        }
+    }];
 }
 
 + (void)linkUser:(PFUser *)user accessToken:(NSString *)accessToken expirationDate:(NSDate *)expirationDate profileID:(NSString *)profileID block:(PFBooleanResultBlock)block
