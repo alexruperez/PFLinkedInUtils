@@ -6,6 +6,7 @@
 [![License](https://img.shields.io/cocoapods/l/PFLinkedInUtils.svg?style=flat)](http://cocoadocs.org/docsets/PFLinkedInUtils)
 [![Platform](https://img.shields.io/cocoapods/p/PFLinkedInUtils.svg?style=flat)](http://cocoadocs.org/docsets/PFLinkedInUtils)
 [![Dependency Status](https://www.versioneye.com/user/projects/555b03e7634daa30fb0001eb/badge.svg?style=flat)](https://www.versioneye.com/user/projects/555b03e7634daa30fb0001eb)
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
 [![Analytics](https://ga-beacon.appspot.com/UA-55329295-1/PFLinkedInUtils/readme?pixel)](https://github.com/igrigorik/ga-beacon)
 
 ## Overview
