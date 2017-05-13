@@ -448,6 +448,16 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
     }
 }
 
++ (BOOL)shouldHandleUrl:(NSURL *)url
+{
+    return [LISDKCallbackHandler shouldHandleUrl:url];
+}
+
++ (BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation
+{
+    return [LISDKCallbackHandler application:application openURL:url sourceApplication:sourceApplication annotation:annotation];
+}
+
 + (NSString *)randomStringWithLength:(int)length
 {
     NSString *letters = @"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

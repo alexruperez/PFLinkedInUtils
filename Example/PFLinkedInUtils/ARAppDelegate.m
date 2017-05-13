@@ -11,8 +11,6 @@
 #import <Parse/Parse.h>
 #import <PFLinkedInUtils/PFLinkedInUtils.h>
 
-#import <linkedin-sdk/LISDK.h>
-
 @implementation ARAppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
@@ -63,11 +61,11 @@
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
 }
 
-    - (BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation {
-        if ([LISDKCallbackHandler shouldHandleUrl:url]) {
-            return [LISDKCallbackHandler application:application openURL:url sourceApplication:sourceApplication annotation:annotation];
-        }
-        return YES;
+- (BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation {
+    if ([PFLinkedInUtils shouldHandleUrl:url]) {
+        return [PFLinkedInUtils application:application openURL:url sourceApplication:sourceApplication annotation:annotation];
     }
+    return YES;
+}
     
 @end
