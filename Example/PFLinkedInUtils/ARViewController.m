@@ -26,15 +26,20 @@
 {
     [super viewDidAppear:animated];
     
+    [self login];
+}
+    
+- (void)login
+{
     [PFLinkedInUtils logInWithBlock:^(PFUser *user, NSError *error) {
         NSLog(@"User: %@, Error: %@", user, error);
     }];
 }
-
-- (void)didReceiveMemoryWarning
-{
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+    
+- (IBAction)didTapLogout:(id)sender {
+    [PFLinkedInUtils logOut];
+    
+    [self login];
 }
 
 @end

@@ -12,36 +12,61 @@
 
 #import <Bolts/BFCancellationToken.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /*!
  Error domain used if there was multiple errors on <BFTask taskForCompletionOfAllTasks:>.
  */
 extern NSString *const BFTaskErrorDomain;
 
 /*!
- An exception that is thrown if there was multiple exceptions on <BFTask taskForCompletionOfAllTasks:>.
+ An error code used for <BFTask taskForCompletionOfAllTasks:>, if there were multiple errors.
  */
-extern NSString *const BFTaskMultipleExceptionsException;
+extern NSInteger const kBFMultipleErrorsError;
+
+/*!
+ An exception that is thrown if there was multiple exceptions on <BFTask taskForCompletionOfAllTasks:>.
+ 
+ @deprecated `BFTask` exception handling is deprecated and will be removed in a future release.
+ */
+extern NSString *const BFTaskMultipleExceptionsException
+__attribute__((deprecated("`BFTask` exception handling is deprecated and will be removed in a future release.")));
+
+/*!
+ An error userInfo key used if there were multiple errors on <BFTask taskForCompletionOfAllTasks:>.
+ Value type is `NSArray<NSError *> *`.
+ */
+extern NSString *const BFTaskMultipleErrorsUserInfoKey;
+
+/*!
+ An error userInfo key used if there were multiple exceptions on <BFTask taskForCompletionOfAllTasks:>.
+ Value type is `NSArray<NSException *> *`.
+ 
+ @deprecated `BFTask` exception handling is deprecated and will be removed in a future release.
+ */
+extern NSString *const BFTaskMultipleExceptionsUserInfoKey
+__attribute__((deprecated("`BFTask` exception handling is deprecated and will be removed in a future release.")));
 
 @class BFExecutor;
 @class BFTask;
-
-/*!
- A block that can act as a continuation for a task.
- */
-typedef id(^BFContinuationBlock)(BFTask *task);
 
 /*!
  The consumer view of a Task. A BFTask has methods to
  inspect the state of the task, and to add continuations to
  be run once the task is complete.
  */
-@interface BFTask : NSObject
+@interface BFTask<__covariant ResultType> : NSObject
+
+/*!
+ A block that can act as a continuation for a task.
+ */
+typedef __nullable id(^BFContinuationBlock)(BFTask<ResultType> *t);
 
 /*!
  Creates a task that is already completed with the given result.
  @param result The result for the task.
  */
-+ (instancetype)taskWithResult:(id)result;
++ (instancetype)taskWithResult:(nullable ResultType)result;
 
 /*!
  Creates a task that is already completed with the given error.
@@ -52,8 +77,11 @@ typedef id(^BFContinuationBlock)(BFTask *task);
 /*!
  Creates a task that is already completed with the given exception.
  @param exception The exception for the task.
+ 
+ @deprecated `BFTask` exception handling is deprecated and will be removed in a future release.
  */
-+ (instancetype)taskWithException:(NSException *)exception;
++ (instancetype)taskWithException:(NSException *)exception
+__attribute__((deprecated("`BFTask` exception handling is deprecated and will be removed in a future release.")));
 
 /*!
  Creates a task that is already cancelled.
@@ -65,7 +93,7 @@ typedef id(^BFContinuationBlock)(BFTask *task);
  all of the input tasks have completed.
  @param tasks An `NSArray` of the tasks to use as an input.
  */
-+ (instancetype)taskForCompletionOfAllTasks:(NSArray *)tasks;
++ (instancetype)taskForCompletionOfAllTasks:(nullable NSArray<BFTask *> *)tasks;
 
 /*!
  Returns a task that will be completed once all of the input tasks have completed.
@@ -73,7 +101,15 @@ typedef id(^BFContinuationBlock)(BFTask *task);
  an `NSArray` of all task results in the order they were provided.
  @param tasks An `NSArray` of the tasks to use as an input.
  */
-+ (instancetype)taskForCompletionOfAllTasksWithResults:(NSArray *)tasks;
++ (instancetype)taskForCompletionOfAllTasksWithResults:(nullable NSArray<BFTask *> *)tasks;
+
+/*!
+ Returns a task that will be completed once there is at least one successful task.
+ The first task to successuly complete will set the result, all other tasks results are 
+ ignored.
+ @param tasks An `NSArray` of the tasks to use as an input.
+ */
++ (instancetype)taskForCompletionOfAnyTask:(nullable NSArray<BFTask *> *)tasks;
 
 /*!
  Returns a task that will be completed a certain amount of time in the future.
@@ -88,8 +124,7 @@ typedef id(^BFContinuationBlock)(BFTask *task);
  task will be finished (with result == nil).
  @param token The cancellation token (optional).
  */
-+ (instancetype)taskWithDelay:(int)millis
-            cancellationToken:(BFCancellationToken *)token;
++ (instancetype)taskWithDelay:(int)millis cancellationToken:(nullable BFCancellationToken *)token;
 
 /*!
  Returns a task that will be completed after the given block completes with
@@ -101,25 +136,27 @@ typedef id(^BFContinuationBlock)(BFTask *task);
  If block returns a BFTask, then the task returned from
  this method will not be completed until that task is completed.
  */
-+ (instancetype)taskFromExecutor:(BFExecutor *)executor
-                       withBlock:(id (^)())block;
++ (instancetype)taskFromExecutor:(BFExecutor *)executor withBlock:(nullable id (^)())block;
 
 // Properties that will be set on the task once it is completed.
 
 /*!
  The result of a successful task.
  */
-@property (nonatomic, strong, readonly) id result;
+@property (nullable, nonatomic, strong, readonly) ResultType result;
 
 /*!
  The error of a failed task.
  */
-@property (nonatomic, strong, readonly) NSError *error;
+@property (nullable, nonatomic, strong, readonly) NSError *error;
 
 /*!
  The exception of a failed task.
+
+ @deprecated `BFTask` exception handling is deprecated and will be removed in a future release.
  */
-@property (nonatomic, strong, readonly) NSException *exception;
+@property (nullable, nonatomic, strong, readonly) NSException *exception
+__attribute__((deprecated("`BFTask` exception handling is deprecated and will be removed in a future release.")));
 
 /*!
  Whether this task has been cancelled.
@@ -147,7 +184,7 @@ typedef id(^BFContinuationBlock)(BFTask *task);
  If block returns a BFTask, then the task returned from
  this method will not be completed until that task is completed.
  */
-- (instancetype)continueWithBlock:(BFContinuationBlock)block;
+- (BFTask *)continueWithBlock:(BFContinuationBlock)block;
 
 /*!
  Enqueues the given block to be run once this task is complete.
@@ -161,8 +198,7 @@ typedef id(^BFContinuationBlock)(BFTask *task);
  If block returns a BFTask, then the task returned from
  this method will not be completed until that task is completed.
  */
-- (instancetype)continueWithBlock:(BFContinuationBlock)block
-                cancellationToken:(BFCancellationToken *)cancellationToken;
+- (BFTask *)continueWithBlock:(BFContinuationBlock)block cancellationToken:(nullable BFCancellationToken *)cancellationToken;
 
 /*!
  Enqueues the given block to be run once this task is complete.
@@ -173,8 +209,7 @@ typedef id(^BFContinuationBlock)(BFTask *task);
  If block returns a BFTask, then the task returned from
  this method will not be completed until that task is completed.
  */
-- (instancetype)continueWithExecutor:(BFExecutor *)executor
-                           withBlock:(BFContinuationBlock)block;
+- (BFTask *)continueWithExecutor:(BFExecutor *)executor withBlock:(BFContinuationBlock)block;
 /*!
  Enqueues the given block to be run once this task is complete.
  @param executor A BFExecutor responsible for determining how the
@@ -185,9 +220,9 @@ typedef id(^BFContinuationBlock)(BFTask *task);
  If block returns a BFTask, then the task returned from
  his method will not be completed until that task is completed.
  */
-- (instancetype)continueWithExecutor:(BFExecutor *)executor
-                               block:(BFContinuationBlock)block
-                   cancellationToken:(BFCancellationToken *)cancellationToken;
+- (BFTask *)continueWithExecutor:(BFExecutor *)executor
+                           block:(BFContinuationBlock)block
+               cancellationToken:(nullable BFCancellationToken *)cancellationToken;
 
 /*!
  Identical to continueWithBlock:, except that the block is only run
@@ -199,7 +234,7 @@ typedef id(^BFContinuationBlock)(BFTask *task);
  If block returns a BFTask, then the task returned from
  this method will not be completed until that task is completed.
  */
-- (instancetype)continueWithSuccessBlock:(BFContinuationBlock)block;
+- (BFTask *)continueWithSuccessBlock:(BFContinuationBlock)block;
 
 /*!
  Identical to continueWithBlock:, except that the block is only run
@@ -212,8 +247,7 @@ typedef id(^BFContinuationBlock)(BFTask *task);
  If block returns a BFTask, then the task returned from
  this method will not be completed until that task is completed.
  */
-- (instancetype)continueWithSuccessBlock:(BFContinuationBlock)block
-                       cancellationToken:(BFCancellationToken *)cancellationToken;
+- (BFTask *)continueWithSuccessBlock:(BFContinuationBlock)block cancellationToken:(nullable BFCancellationToken *)cancellationToken;
 
 /*!
  Identical to continueWithExecutor:withBlock:, except that the block
@@ -227,8 +261,7 @@ typedef id(^BFContinuationBlock)(BFTask *task);
  If block returns a BFTask, then the task returned from
  this method will not be completed until that task is completed.
  */
-- (instancetype)continueWithExecutor:(BFExecutor *)executor
-                    withSuccessBlock:(BFContinuationBlock)block;
+- (BFTask *)continueWithExecutor:(BFExecutor *)executor withSuccessBlock:(BFContinuationBlock)block;
 
 /*!
  Identical to continueWithExecutor:withBlock:, except that the block
@@ -243,9 +276,9 @@ typedef id(^BFContinuationBlock)(BFTask *task);
  If block returns a BFTask, then the task returned from
  this method will not be completed until that task is completed.
  */
-- (instancetype)continueWithExecutor:(BFExecutor *)executor
-                        successBlock:(BFContinuationBlock)block
-                   cancellationToken:(BFCancellationToken *)cancellationToken;
+- (BFTask *)continueWithExecutor:(BFExecutor *)executor
+                    successBlock:(BFContinuationBlock)block
+               cancellationToken:(nullable BFCancellationToken *)cancellationToken;
 
 /*!
  Waits until this operation is completed.
@@ -256,3 +289,5 @@ typedef id(^BFContinuationBlock)(BFTask *task);
 - (void)waitUntilFinished;
 
 @end
+
+NS_ASSUME_NONNULL_END

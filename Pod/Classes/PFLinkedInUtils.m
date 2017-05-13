@@ -9,7 +9,7 @@
 #import "PFLinkedInUtils.h"
 
 #import <IOSLinkedInAPI/LIALinkedInApplication.h>
-
+#import <linkedin-sdk/LISDK.h>
 
 NSInteger const kPFErrorLinkedInAccountAlreadyLinked = 308;
 NSInteger const kPFErrorLinkedInIdMissing = 350;
@@ -22,8 +22,9 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
 
 
 @interface PFLinkedInUtils ()
-
-@property (strong, nonatomic) LIALinkedInHttpClient *linkedInHttpClient;
+    
+    @property (strong, nonatomic) LIALinkedInHttpClient *linkedInHttpClient;
+    @property (strong, nonatomic) NSArray *grantedAccess;
 
 @end
 
@@ -37,6 +38,8 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
 + (void)initializeWithRedirectURL:(NSString *)redirectURL clientId:(NSString *)clientId clientSecret:(NSString *)clientSecret state:(NSString *)state grantedAccess:(NSArray *)grantedAccess presentingViewController:(id)presentingViewController
 {
     self.sharedInstance.linkedInHttpClient = [LIALinkedInHttpClient clientForApplication:[LIALinkedInApplication applicationWithRedirectURL:redirectURL clientId:clientId clientSecret:clientSecret state:state grantedAccess:grantedAccess] presentingViewController:presentingViewController];
+    
+    self.sharedInstance.grantedAccess = grantedAccess;
 }
 
 + (BOOL)isLinkedWithUser:(PFUser *)user
@@ -48,12 +51,12 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
 {
     NSString *accessToken = self.linkedInAccessToken;
     NSDate *expirationDate = self.linkedInAccessTokenExpirationDate;
-    if (accessToken && expirationDate && [self.linkedInHttpClient validToken])
-    {
+    
+    if (accessToken
+        && expirationDate
+        && [self isTokenValid]) {
         [self logInOrSignUpUserWithAccessToken:accessToken expirationDate:expirationDate block:block];
-    }
-    else
-    {
+    } else {
         [self getAccessTokenWithBlock:^(NSString *accessToken, NSError *accessTokenError) {
             if (accessToken && !accessTokenError)
             {
@@ -71,7 +74,8 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
 {
     NSString *accessToken = self.linkedInAccessToken;
     NSDate *expirationDate = self.linkedInAccessTokenExpirationDate;
-    if (accessToken && expirationDate && [self.linkedInHttpClient validToken])
+    
+    if (accessToken && expirationDate && [self isTokenValid])
     {
         [self linkUser:user accessToken:accessToken expirationDate:expirationDate block:block];
     }
@@ -88,6 +92,15 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
             }
         }];
     }
+}
+    
++ (bool)isTokenValid {
+    return [self.linkedInHttpClient validToken]
+    || [LISDKSessionManager hasValidSession];
+}
+    
++ (bool)isUsingNativeAuth {
+    return [LISDKSessionManager hasValidSession];
 }
 
 + (void)unlinkUser:(PFUser *)user block:(PFBooleanResultBlock)block
@@ -130,6 +143,7 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
 + (BOOL)logOut
 {
     [PFUser logOut];
+    [LISDKSessionManager clearSession];
     return [self clearUserDefaults];
 }
 
@@ -157,72 +171,130 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
 
 + (void)getAccessTokenWithBlock:(PFStringResultBlock)block
 {
-    [self.linkedInHttpClient getAuthorizationCode:^(NSString *authorizationCode) {
-        [self.linkedInHttpClient getAccessToken:authorizationCode success:^(NSDictionary *accessTokenDictionary) {
+    [LISDKSessionManager
+     createSessionWithAuth: self.sharedInstance.grantedAccess
+     state:nil
+     showGoToAppStoreDialog:false
+     successBlock:^(NSString *accessToken) {
+         if (block)
+         {
+             LISDKSession *session = [[LISDKSessionManager sharedInstance] session];
+             block(session.accessToken.serializedString, nil);
+         }
+     } errorBlock:^(NSError *error) {
+         if (error.code == LINKEDIN_APP_NOT_FOUND) {
+             // Try to login with webpage
+             [self getWebPageAccessTokenWithBlock:block];
+         } else {
+             block(nil, error);
+         }
+     }];
+}
+    
++ (void)getWebPageAccessTokenWithBlock:(PFStringResultBlock)block
+    {
+        [self.linkedInHttpClient getAuthorizationCode:^(NSString *authorizationCode) {
+            [self.linkedInHttpClient getAccessToken:authorizationCode success:^(NSDictionary *accessTokenDictionary) {
+                if (block)
+                {
+                    NSString *accessToken = accessTokenDictionary[@"access_token"];
+                    block(accessToken, nil);
+                }
+            } failure:^(NSError *accessTokenError) {
+                if (block)
+                {
+                    block(nil, accessTokenError);
+                }
+            }];
+        } cancel:^{
             if (block)
             {
-                block(accessTokenDictionary[@"access_token"], nil);
+                block(nil, [NSError errorWithDomain:PFParseErrorDomain code:kPFErrorLinkedInInvalidSession userInfo:@{NSLocalizedDescriptionKey : @"LinkedIn Invalid Session"}]);
             }
-        } failure:^(NSError *accessTokenError) {
+        } failure:^(NSError *authorizationCodeError) {
             if (block)
             {
-                block(nil, accessTokenError);
+                block(nil, authorizationCodeError);
             }
         }];
-    } cancel:^{
-        if (block)
-        {
-            block(nil, [NSError errorWithDomain:PFParseErrorDomain code:kPFErrorLinkedInInvalidSession userInfo:@{NSLocalizedDescriptionKey : @"LinkedIn Invalid Session"}]);
-        }
-    } failure:^(NSError *authorizationCodeError) {
-        if (block)
-        {
-            block(nil, authorizationCodeError);
-        }
-    }];
-}
+    }
 
 + (void)getProfileIDWithAccessToken:(NSString *)accessToken block:(PFStringResultBlock)block
 {
+    if ([self isUsingNativeAuth]) {
+        [self getProfileIDWithAccessTokenFromNativeApp:block];
+    } else {
+        [self getProfileIDWithAccessTokenFromApiClient:accessToken block:block];
+    }
+}
+    
++ (void)getProfileIDWithAccessTokenFromNativeApp:(PFStringResultBlock)block
+{
+    NSString *request = [NSString stringWithFormat:@"%@/people/~", LINKEDIN_API_URL];
+    [[LISDKAPIHelper sharedInstance]
+     getRequest:request success:^(LISDKAPIResponse *response) {
+         NSError *jsonError;
+         NSData *objectData = [response.data dataUsingEncoding:NSUTF8StringEncoding];
+         NSDictionary *responseDict = [NSJSONSerialization JSONObjectWithData:objectData
+                                                                      options:NSJSONReadingMutableContainers
+                                                                        error:&jsonError];
+         [self getProfileIDFromResponseDict:responseDict block:block];
+     } error:^(LISDKAPIError *error) {
+         if (block)
+         {
+             block(nil, error);
+         }
+     }];
+}
+    
++ (void)getProfileIDWithAccessTokenFromApiClient:(NSString *)accessToken block:(PFStringResultBlock)block
+{
     [self.linkedInHttpClient GET:[NSString stringWithFormat:@"https://api.linkedin.com/v1/people/~?oauth2_access_token=%@&format=json", accessToken] parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
-        NSString *profileID = nil;
-        NSString *profileURL = responseObject[@"siteStandardProfileRequest"][@"url"];
-        if (profileURL)
-        {
-            NSString *params = [[profileURL componentsSeparatedByString:@"?"] lastObject];
-            if (params)
-            {
-                for (NSString *param in [params componentsSeparatedByString:@"&"])
-                {
-                    NSArray *keyVal = [param componentsSeparatedByString:@"="];
-                    if (keyVal.count > 1)
-                    {
-                        if ([keyVal[0] isEqualToString:@"id"])
-                        {
-                            profileID = keyVal[1];
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        if (profileID)
-        {
-            if (block)
-            {
-                block(profileID, nil);
-            }
-        }
-        else if (block)
-        {
-                block(nil, [NSError errorWithDomain:PFParseErrorDomain code:kPFErrorLinkedInIdMissing userInfo:@{NSLocalizedDescriptionKey : @"LinkedIn Id Missing"}]);
-        }
+        [self getProfileIDFromResponseDict:responseObject block:block];
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
         if (block)
         {
             block(nil, error);
         }
     }];
+}
+    
++ (void)getProfileIDFromResponseDict:(NSDictionary *)responseDict block:(PFStringResultBlock)block {
+    NSLog(@"User data: %@", responseDict);
+    
+    NSString *profileID = nil;
+    NSString *profileURL = responseDict[@"siteStandardProfileRequest"][@"url"];
+    
+    if (profileURL)
+    {
+        NSString *params = [[profileURL componentsSeparatedByString:@"?"] lastObject];
+        if (params)
+        {
+            for (NSString *param in [params componentsSeparatedByString:@"&"])
+            {
+                NSArray *keyVal = [param componentsSeparatedByString:@"="];
+                if (keyVal.count > 1)
+                {
+                    if ([keyVal[0] isEqualToString:@"id"])
+                    {
+                        profileID = keyVal[1];
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    if (profileID)
+    {
+        if (block)
+        {
+            block(profileID, nil);
+        }
+    }
+    else if (block)
+    {
+        block(nil, [NSError errorWithDomain:PFParseErrorDomain code:kPFErrorLinkedInIdMissing userInfo:@{NSLocalizedDescriptionKey : @"LinkedIn Id Missing"}]);
+    }
 }
 
 + (void)logInOrSignUpUserWithAccessToken:(NSString *)accessToken expirationDate:(NSDate *)expirationDate block:(PFUserResultBlock)block

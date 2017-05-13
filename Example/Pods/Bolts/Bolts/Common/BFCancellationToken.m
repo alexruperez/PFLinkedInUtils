@@ -11,10 +11,11 @@
 #import "BFCancellationToken.h"
 #import "BFCancellationTokenRegistration.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface BFCancellationToken ()
 
-@property (atomic, assign, getter=isCancellationRequested) BOOL cancellationRequested;
-@property (nonatomic, strong) NSMutableArray *registrations;
+@property (nullable, nonatomic, strong) NSMutableArray *registrations;
 @property (nonatomic, strong) NSObject *lock;
 @property (nonatomic) BOOL disposed;
 
@@ -30,13 +31,17 @@
 
 @implementation BFCancellationToken
 
+@synthesize cancellationRequested = _cancellationRequested;
+
 #pragma mark - Initializer
 
 - (instancetype)init {
-    if (self = [super init]) {
-        _registrations = [NSMutableArray array];
-        _lock = [NSObject new];
-    }
+    self = [super init];
+    if (!self) return self;
+
+    _registrations = [NSMutableArray array];
+    _lock = [NSObject new];
+
     return self;
 }
 
@@ -94,7 +99,9 @@
 
 - (void)cancelAfterDelay:(int)millis {
     [self throwIfDisposed];
-    NSAssert(millis >= -1, @"Delay must be >= -1");
+    if (millis < -1) {
+        [NSException raise:NSInvalidArgumentException format:@"Delay must be >= -1"];
+    }
 
     if (millis == 0) {
         [self cancel];
@@ -120,16 +127,18 @@
         if (self.disposed) {
             return;
         }
+        [self.registrations makeObjectsPerformSelector:@selector(dispose)];
+        self.registrations = nil;
         self.disposed = YES;
-        for (BFCancellationTokenRegistration *registration in self.registrations) {
-            [registration dispose];
-        }
-        [self.registrations removeAllObjects];
     }
 }
 
 - (void)throwIfDisposed {
-    NSAssert(!self.disposed, @"Object already disposed");
+    if (self.disposed) {
+        [NSException raise:NSInternalInconsistencyException format:@"Object already disposed"];
+    }
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

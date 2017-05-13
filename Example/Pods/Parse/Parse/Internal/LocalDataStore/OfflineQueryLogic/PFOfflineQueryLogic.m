@@ -10,6 +10,7 @@
 #import "PFOfflineQueryLogic.h"
 
 #import <Bolts/BFTask.h>
+#import <Bolts/BFExecutor.h>
 
 #import "PFACL.h"
 #import "PFAssert.h"
@@ -23,11 +24,12 @@
 #import "PFQueryPrivate.h"
 #import "PFRelation.h"
 #import "PFRelationPrivate.h"
+#import "PFQueryConstants.h"
 
 typedef BOOL (^PFComparatorDeciderBlock)(id value, id constraint);
 typedef BOOL (^PFSubQueryMatcherBlock)(id object, NSArray *results);
 
-/*!
+/**
  A query to be used in $inQuery, $notInQuery, $select and $dontSelect
  */
 @interface PFSubQueryMatcher : NSObject
@@ -108,10 +110,10 @@ typedef BOOL (^PFSubQueryMatcherBlock)(id object, NSArray *results);
     if ([key rangeOfString:@"."].location != NSNotFound) {
         NSArray *parts = [key componentsSeparatedByString:@"."];
 
-        NSString *firstKey = [parts firstObject];
+        NSString *firstKey = parts.firstObject;
         NSString *rest = nil;
-        if ([parts count] > 1) {
-            NSRange range = NSMakeRange(1, [parts count] - 1);
+        if (parts.count > 1) {
+            NSRange range = NSMakeRange(1, parts.count - 1);
             rest = [[parts subarrayWithRange:range] componentsJoinedByString:@"."];
         }
         id value = [self valueForContainer:container key:firstKey depth:depth + 1];
@@ -124,7 +126,7 @@ typedef BOOL (^PFSubQueryMatcherBlock)(id object, NSArray *results);
                     return [self valueForContainer:restFormat key:rest depth:depth + 1];
                 }
             }
-            [NSException raise:NSInvalidArgumentException format:@"Key %@ is invalid", key];
+            PFParameterAssertionFailure(@"Key %@ is invalid.", key);
         }
         return [self valueForContainer:value key:rest depth:depth + 1];
     }
@@ -133,9 +135,7 @@ typedef BOOL (^PFSubQueryMatcherBlock)(id object, NSArray *results);
         PFObject *object = (PFObject *)container;
 
         // The object needs to have been fetched already if we are going to sort by one of its field.
-        if (!object.isDataAvailable) {
-            [NSException raise:NSInvalidArgumentException format:@"Bad key %@", key];
-        }
+        PFParameterAssert(object.dataAvailable, @"Bad key %@", key);
 
         // Handle special keys for PFObject.
         if ([key isEqualToString:@"objectId"]) {
@@ -152,7 +152,7 @@ typedef BOOL (^PFSubQueryMatcherBlock)(id object, NSArray *results);
     } else if (container == nil) {
         return nil;
     } else {
-        [NSException raise:NSInvalidArgumentException format:@"Bad key %@", key];
+        PFParameterAssertionFailure(@"Bad key %@", key);
         // Shouldn't reach here.
         return nil;
     }
@@ -162,7 +162,7 @@ typedef BOOL (^PFSubQueryMatcherBlock)(id object, NSArray *results);
 #pragma mark - Matcher With Decider
 ///--------------------------------------
 
-/*!
+/**
  Returns YES if decider returns YES for any value in the given array.
  */
 + (BOOL)matchesArray:(NSArray *)array
@@ -176,7 +176,7 @@ typedef BOOL (^PFSubQueryMatcherBlock)(id object, NSArray *results);
     return NO;
 }
 
-/*!
+/**
  Returns YES if decider returns YES for any value in the given array.
  */
 + (BOOL)matchesValue:(id)value
@@ -193,7 +193,7 @@ typedef BOOL (^PFSubQueryMatcherBlock)(id object, NSArray *results);
 #pragma mark - Matcher
 ///--------------------------------------
 
-/*!
+/**
  Implements simple equality constraints. This emulates Mongo's behavior where "equals" can mean array containment.
  */
 + (BOOL)matchesValue:(id)value
@@ -216,7 +216,7 @@ typedef BOOL (^PFSubQueryMatcherBlock)(id object, NSArray *results);
     }];
 }
 
-/*!
+/**
  Matches $ne constraints.
  */
 + (BOOL)matchesValue:(id)value
@@ -224,7 +224,7 @@ typedef BOOL (^PFSubQueryMatcherBlock)(id object, NSArray *results);
     return ![self matchesValue:value equalTo:constraint];
 }
 
-/*!
+/**
  Matches $lt constraints.
  */
 + (BOOL)matchesValue:(id)value
@@ -238,7 +238,7 @@ typedef BOOL (^PFSubQueryMatcherBlock)(id object, NSArray *results);
     }];
 }
 
-/*!
+/**
  Matches $lte constraints.
  */
 + (BOOL)matchesValue:(id)value
@@ -252,7 +252,7 @@ typedef BOOL (^PFSubQueryMatcherBlock)(id object, NSArray *results);
     }];
 }
 
-/*!
+/**
  Matches $gt constraints.
  */
 + (BOOL)matchesValue:(id)value
@@ -266,7 +266,7 @@ typedef BOOL (^PFSubQueryMatcherBlock)(id object, NSArray *results);
     }];
 }
 
-/*!
+/**
  Matches $gte constraints.
  */
 + (BOOL)matchesValue:(id)value
@@ -280,7 +280,7 @@ greaterThanOrEqualTo:(id)constraint {
     }];
 }
 
-/*!
+/**
  Matches $in constraints.
  $in returns YES if the intersection of value and constraint is not an empty set.
  */
@@ -300,7 +300,7 @@ greaterThanOrEqualTo:(id)constraint {
     return NO;
 }
 
-/*!
+/**
  Matches $nin constraints.
  */
 + (BOOL)matchesValue:(id)value
@@ -308,7 +308,7 @@ greaterThanOrEqualTo:(id)constraint {
     return ![self matchesValue:value containedIn:constraint];
 }
 
-/*!
+/**
  Matches $all constraints.
  */
 + (BOOL)matchesValue:(id)value containsAllObjectsInArray:(id)constraints {
@@ -323,7 +323,7 @@ greaterThanOrEqualTo:(id)constraint {
     return YES;
 }
 
-/*!
+/**
  Matches $regex constraints.
  */
 + (BOOL)matchesValue:(id)value
@@ -336,9 +336,9 @@ greaterThanOrEqualTo:(id)constraint {
     if (options == nil) {
         options = @"";
     }
-    if ([options rangeOfString:@"^[imxs]*$" options:NSRegularExpressionSearch].location == NSNotFound) {
-        [NSException raise:NSInvalidArgumentException format:@"Invalid regex options: %@", options];
-    }
+
+    PFParameterAssert([options rangeOfString:@"^[imxs]*$" options:NSRegularExpressionSearch].location != NSNotFound,
+                      @"Invalid regex options %@", options);
 
     NSRegularExpressionOptions flags = 0;
     if ([options rangeOfString:@"i"].location != NSNotFound) {
@@ -362,7 +362,7 @@ greaterThanOrEqualTo:(id)constraint {
     return matches.count > 0;
 }
 
-/*!
+/**
  Matches $exists constraints.
  */
 + (BOOL)matchesValue:(id)value
@@ -374,7 +374,7 @@ greaterThanOrEqualTo:(id)constraint {
     return value == nil || value == [NSNull null];
 }
 
-/*!
+/**
  Matches $nearSphere constraints.
  */
 + (BOOL)matchesValue:(id)value
@@ -388,10 +388,10 @@ greaterThanOrEqualTo:(id)constraint {
     }
     PFGeoPoint *point1 = constraint;
     PFGeoPoint *point2 = value;
-    return [point1 distanceInRadiansTo:point2] <= [maxDistance doubleValue];
+    return [point1 distanceInRadiansTo:point2] <= maxDistance.doubleValue;
 }
 
-/*!
+/**
  Matches $within constraints.
  */
 + (BOOL)matchesValue:(id)value
@@ -402,19 +402,13 @@ greaterThanOrEqualTo:(id)constraint {
     PFGeoPoint *northEast = box[1];
     PFGeoPoint *target = (PFGeoPoint *)value;
 
-    if (northEast.longitude < southWest.longitude) {
-        [NSException raise:NSInvalidArgumentException
-                    format:@"whereWithinGeoBox queries cannot cross the International Date Line."];
-    }
-    if (northEast.latitude < southWest.latitude) {
-        [NSException raise:NSInvalidArgumentException
-                    format:@"The southwest corner of a geo box must be south of the northeast corner."];
-    }
-    if (northEast.longitude - southWest.longitude > 180) {
-        [NSException raise:NSInvalidArgumentException
-                    format:@"Geo box queries larger than 180 degrees in longitude are not supported."
-         @"Please check point order."];
-    }
+    PFParameterAssert(northEast.longitude >= southWest.longitude,
+                      @"whereWithinGeoBox queries cannot cross the International Date Line.");
+    PFParameterAssert(northEast.latitude >= southWest.latitude,
+                      @"The southwest corner of a geo box must be south of the northeast corner.");
+    PFParameterAssert((northEast.longitude - southWest.longitude) <= 180,
+                      @"Geo box queries larger than 180 degrees in longitude are not supported."
+                      @"Please check point order.");
 
     return (target.latitude >= southWest.latitude &&
             target.latitude <= northEast.latitude &&
@@ -422,7 +416,7 @@ greaterThanOrEqualTo:(id)constraint {
             target.longitude <= northEast.longitude);
 }
 
-/*!
+/**
  Returns YES iff the given value matches the given operator and constraint.
  Raise NSInvalidArgumentException if the operator is not one this function can handle
  */
@@ -463,14 +457,12 @@ greaterThanOrEqualTo:(id)constraint {
     } else if ([operator isEqualToString:PFQueryKeyWithin]) {
         return [self matchesValue:value within:constraint];
     }
-
-    [NSException raise:NSInvalidArgumentException
-                format:@"The offline store does not yet support %@ operator.", operator];
+    PFParameterAssertionFailure(@"Local Datastore does not yet support %@ operator.", operator);
     // Shouldn't reach here
     return YES;
 }
 
-/*!
+/**
  Creates a matcher that handles $inQuery constraints.
  */
 - (PFConstraintMatcherBlock)createMatcherForKey:(NSString *)key
@@ -485,7 +477,7 @@ greaterThanOrEqualTo:(id)constraint {
     } user:user];
 }
 
-/*!
+/**
  Creates a matcher that handles $notInQuery constraints.
  */
 - (PFConstraintMatcherBlock)createMatcherForKey:(NSString *)key
@@ -499,7 +491,7 @@ greaterThanOrEqualTo:(id)constraint {
     };
 }
 
-/*!
+/**
  Creates a matcher that handles $select constraints.
  */
 - (PFConstraintMatcherBlock)createMatcherForKey:(NSString *)key
@@ -522,7 +514,7 @@ greaterThanOrEqualTo:(id)constraint {
     } user:user];
 }
 
-/*!
+/**
  Creates a matcher that handles $dontSelect constraints.
  */
 - (PFConstraintMatcherBlock)createMatcherForKey:(NSString *)key
@@ -536,7 +528,7 @@ greaterThanOrEqualTo:(id)constraint {
     };
 }
 
-/*!
+/**
  Creates a matcher for a particular constraint operator.
  */
 - (PFConstraintMatcherBlock)createMatcherWithOperator:(NSString *)operator
@@ -564,7 +556,7 @@ greaterThanOrEqualTo:(id)constraint {
     }
 }
 
-/*!
+/**
  Handles $or queries.
  */
 - (PFConstraintMatcherBlock)createOrMatcherForQueries:(NSArray *)queries user:(PFUser *)user {
@@ -589,7 +581,7 @@ greaterThanOrEqualTo:(id)constraint {
     };
 }
 
-/*!
+/**
  Returns a PFConstraintMatcherBlock that return true iff the object matches queryConstraints. This
  takes in a SQLiteDatabase connection because SQLite is finicky about nesting connections, so we
  want to reuse them whenever possible.
@@ -696,14 +688,14 @@ greaterThanOrEqualTo:(id)constraint {
     // Descend into the container and try again
     NSArray *parts = [include componentsSeparatedByString:@"."];
 
-    NSString *key = [parts firstObject];
+    NSString *key = parts.firstObject;
     NSString *rest = nil;
-    if ([parts count] > 1) {
-        NSRange range = NSMakeRange(1, [parts count] - 1);
+    if (parts.count > 1) {
+        NSRange range = NSMakeRange(1, parts.count - 1);
         rest = [[parts subarrayWithRange:range] componentsJoinedByString:@"."];
     }
 
-    return [[[BFTask taskWithResult:nil] continueWithBlock:^id(BFTask *task) {
+    return [[BFTask taskFromExecutor:[BFExecutor defaultExecutor] withBlock:^id{
         if ([container isKindOfClass:[PFObject class]]) {
             BFTask *fetchTask = [self fetchIncludeAsync:nil container:container database:database];
             return [fetchTask continueWithSuccessBlock:^id(BFTask *task) {
@@ -716,10 +708,9 @@ greaterThanOrEqualTo:(id)constraint {
             // throwing an exception.
             return nil;
         }
-        NSException *exception = [NSException exceptionWithName:NSInternalInconsistencyException
-                                                         reason:@"include is invalid"
-                                                       userInfo:nil];
-        return [BFTask taskWithException:exception];
+        NSError *error = [PFErrorUtilities errorWithCode:kPFErrorInvalidNestedKey
+                                                 message:@"include is invalid"];
+        return [BFTask taskWithError:error];
     }] continueWithSuccessBlock:^id(BFTask *task) {
         return [self fetchIncludeAsync:rest container:task.result database:database];
     }];
@@ -734,11 +725,11 @@ greaterThanOrEqualTo:(id)constraint {
         return YES;
     }
 
-    PFACL *acl = [object ACL];
+    PFACL *acl = object.ACL;
     if (acl == nil) {
         return YES;
     }
-    if ([acl getPublicReadAccess]) {
+    if (acl.publicReadAccess) {
         return YES;
     }
     if (user != nil && [acl getReadAccessForUser:user]) {
@@ -754,11 +745,11 @@ greaterThanOrEqualTo:(id)constraint {
         return YES;
     }
 
-    PFACL *acl = [object ACL];
+    PFACL *acl = object.ACL;
     if (acl == nil) {
         return YES;
     }
-    if ([acl getPublicWriteAccess]) {
+    if (acl.publicWriteAccess) {
         return YES;
     }
     if (user != nil && [acl getWriteAccessForUser:user]) {
@@ -826,10 +817,8 @@ greaterThanOrEqualTo:(id)constraint {
     [keys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         NSString *key = (NSString *)obj;
         if ([key rangeOfString:@"^-?[A-Za-z][A-Za-z0-9_]*$" options:NSRegularExpressionSearch].location == NSNotFound) {
-            if (![@"_created_at" isEqualToString:key] && ![@"_updated_at" isEqualToString:key]) {
-                [NSException raise:NSInternalInconsistencyException
-                            format:@"Invalid key name: %@", key];
-            }
+            PFConsistencyAssert([@"_created_at" isEqualToString:key] || [@"_updated_at" isEqualToString:key],
+                                @"Invalid key name: %@", key);
         }
     }];
 

@@ -11,13 +11,27 @@
 #import <Parse/Parse.h>
 #import <PFLinkedInUtils/PFLinkedInUtils.h>
 
+#import <linkedin-sdk/LISDK.h>
+
 @implementation ARAppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-    [Parse setApplicationId:@"PARSE_APP_ID" clientKey:@"PARSE_CLIENT_KEY"];
+    
+    [Parse initializeWithConfiguration:
+     [ParseClientConfiguration configurationWithBlock:
+      ^(id<ParseMutableClientConfiguration>  _Nonnull configuration) {
+          configuration.applicationId = @"PARSE_APP_ID";
+          configuration.clientKey = @"PARSE_CLIENT_KEY";
+          configuration.server = @"PARSE_SERVER_URL";
+      }]];
 
-    [PFLinkedInUtils initializeWithRedirectURL:@"LINKEDIN_REDIRECT_URL" clientId:@"LINKEDIN_CLIENT_ID" clientSecret:@"LINKEDIN_CLIENT_SECRET" state:@"DCEEFWF45453sdffef424" grantedAccess:@[@"r_basicprofile"] presentingViewController:nil];
+    [PFLinkedInUtils initializeWithRedirectURL:@"LINKEDIN_REDIRECT_URL"
+                                      clientId:@"LINKEDIN_CLIENT_ID"
+                                  clientSecret:@"LINKEDIN_CLIENT_SECRET"
+                                         state:@"LINKEDIN_STATE"
+                                 grantedAccess:@[@"r_basicprofile", @"r_emailaddress"]
+                      presentingViewController:nil];
 
     return YES;
 }
@@ -49,4 +63,11 @@
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
 }
 
+    - (BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation {
+        if ([LISDKCallbackHandler shouldHandleUrl:url]) {
+            return [LISDKCallbackHandler application:application openURL:url sourceApplication:sourceApplication annotation:annotation];
+        }
+        return YES;
+    }
+    
 @end

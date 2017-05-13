@@ -1,31 +1,32 @@
 PODS:
-  - AFNetworking (2.6.0):
-    - AFNetworking/NSURLConnection (= 2.6.0)
-    - AFNetworking/NSURLSession (= 2.6.0)
-    - AFNetworking/Reachability (= 2.6.0)
-    - AFNetworking/Security (= 2.6.0)
-    - AFNetworking/Serialization (= 2.6.0)
-    - AFNetworking/UIKit (= 2.6.0)
-  - AFNetworking/NSURLConnection (2.6.0):
+  - AFNetworking (2.6.3):
+    - AFNetworking/NSURLConnection (= 2.6.3)
+    - AFNetworking/NSURLSession (= 2.6.3)
+    - AFNetworking/Reachability (= 2.6.3)
+    - AFNetworking/Security (= 2.6.3)
+    - AFNetworking/Serialization (= 2.6.3)
+    - AFNetworking/UIKit (= 2.6.3)
+  - AFNetworking/NSURLConnection (2.6.3):
     - AFNetworking/Reachability
     - AFNetworking/Security
     - AFNetworking/Serialization
-  - AFNetworking/NSURLSession (2.6.0):
+  - AFNetworking/NSURLSession (2.6.3):
     - AFNetworking/Reachability
     - AFNetworking/Security
     - AFNetworking/Serialization
-  - AFNetworking/Reachability (2.6.0)
-  - AFNetworking/Security (2.6.0)
-  - AFNetworking/Serialization (2.6.0)
-  - AFNetworking/UIKit (2.6.0):
+  - AFNetworking/Reachability (2.6.3)
+  - AFNetworking/Security (2.6.3)
+  - AFNetworking/Serialization (2.6.3)
+  - AFNetworking/UIKit (2.6.3):
     - AFNetworking/NSURLConnection
     - AFNetworking/NSURLSession
-  - Bolts/Tasks (1.2.1)
+  - Bolts/Tasks (1.8.4)
   - IOSLinkedInAPI (2.0.0):
     - AFNetworking (>= 2.0.0)
-  - Parse (1.8.1):
-    - Bolts/Tasks (>= 1.2.0)
+  - Parse (1.14.4):
+    - Bolts/Tasks (~> 1.8)
   - PFLinkedInUtils (0.1.8):
+    - AFNetworking (~> 2.0)
     - IOSLinkedInAPI (~> 2.0)
     - Parse (~> 1.8)
 
@@ -37,10 +38,12 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  AFNetworking: 79f7eb1a0fcfa7beb409332b2ca49afe9ce53b05
-  Bolts: 7686a5cb204d1ac54cee26f12d9b7622db3f80d1
+  AFNetworking: cb8d14a848e831097108418f5d49217339d4eb60
+  Bolts: 8a7995239dbe724f9cba2248b766d48b7ebdd322
   IOSLinkedInAPI: d0adc664472d471b0df9b2aad92a2d82de926c40
-  Parse: 2155953b1565494095d5fa5c83b3c77f2c677c09
-  PFLinkedInUtils: fd9f1bd34223e4531abe5ff15d37e22a7390efef
+  Parse: b0aa91d2c435e53d4a9af26e741e014c9b35c42e
+  PFLinkedInUtils: 4cedf05c733bdcdd823248031187b325d5e661b5
 
-COCOAPODS: 0.38.2
+PODFILE CHECKSUM: fcaf42cf5af8ee230945049e5784619abfac5843
+
+COCOAPODS: 1.2.1

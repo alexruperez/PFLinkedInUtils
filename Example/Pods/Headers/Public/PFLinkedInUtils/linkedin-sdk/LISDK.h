@@ -1,0 +1,1 @@
+../../../../../../Pod/Frameworks/linkedin-sdk.framework/Headers/LISDK.h
