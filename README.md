@@ -1,11 +1,9 @@
 # PFLinkedInUtils
-[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/alexruperez/PFLinkedInUtils?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Twitter](http://img.shields.io/badge/contact-@alexruperez-blue.svg?style=flat)](http://twitter.com/alexruperez)
 [![GitHub Issues](http://img.shields.io/github/issues/alexruperez/PFLinkedInUtils.svg?style=flat)](http://github.com/alexruperez/PFLinkedInUtils/issues)
 [![Version](https://img.shields.io/cocoapods/v/PFLinkedInUtils.svg?style=flat)](http://cocoadocs.org/docsets/PFLinkedInUtils)
 [![License](https://img.shields.io/cocoapods/l/PFLinkedInUtils.svg?style=flat)](http://cocoadocs.org/docsets/PFLinkedInUtils)
 [![Platform](https://img.shields.io/cocoapods/p/PFLinkedInUtils.svg?style=flat)](http://cocoadocs.org/docsets/PFLinkedInUtils)
-[![Dependency Status](https://www.versioneye.com/user/projects/555b03e7634daa30fb0001eb/badge.svg?style=flat)](https://www.versioneye.com/user/projects/555b03e7634daa30fb0001eb)
 [![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
 [![Analytics](https://ga-beacon.appspot.com/UA-55329295-1/PFLinkedInUtils/readme?pixel)](https://github.com/igrigorik/ga-beacon)
 
@@ -21,7 +19,7 @@ https://developer.linkedin.com/blog/posts/2015/developer-program-changes
 
 http://blog.parse.com/announcements/moving-on/
 
-This class is currently for iOS only.
+This class currently supports iOS only.
 
 ![PFLinkedInUtils Screenshot](https://raw.githubusercontent.com/alexruperez/PFLinkedInUtils/master/screenshot.png)
 
@@ -48,24 +46,35 @@ To run the example project, clone the repo, and run `pod install` from the Examp
 ### Example
 
 ```objectivec
-[Parse setApplicationId:@"PARSE_APP_ID" clientKey:@"PARSE_CLIENT_SECRET"];
+[Parse initializeWithConfiguration:
+     [ParseClientConfiguration configurationWithBlock:
+      ^(id<ParseMutableClientConfiguration>  _Nonnull configuration) {
+          configuration.applicationId = @"PARSE_APP_ID";
+          configuration.clientKey = @"PARSE_CLIENT_KEY";
+          configuration.server = @"PARSE_SERVER_URL";
+      }]];
 
-[PFLinkedInUtils initializeWithRedirectURL:@"LINKEDIN_REDIRECT_URL" clientId:@"LINKEDIN_CLIENT_ID" clientSecret:@"LINKEDIN_CLIENT_SECRET" state:@"DCEEFWF45453sdffef424" grantedAccess:@[@"r_fullprofile", @"r_network"] presentingViewController:nil];
+[PFLinkedInUtils initializeWithRedirectURL:@"LINKEDIN_REDIRECT_URL"
+                                      clientId:@"LINKEDIN_CLIENT_ID"
+                                  clientSecret:@"LINKEDIN_CLIENT_SECRET"
+                                         state:@"LINKEDIN_STATE"
+                                 grantedAccess:@[@"r_basicprofile", @"r_emailaddress"]
+                      presentingViewController:nil];
 
 [PFLinkedInUtils logInWithBlock:^(PFUser *user, NSError *error) {
     NSLog(@"User: %@, Error: %@", user, error);
-
+    
     [PFLinkedInUtils.linkedInHttpClient GET:@"LINKEDIN_API_URL" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
-		    NSLog(@"Response JSON: %@", responseObject);
-		} failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-		    NSLog(@"Error: %@", error);
-		}];
+    NSLog(@"Response JSON: %@", responseObject);
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+    NSLog(@"Error: %@", error);
+    }];
 }];
 ```
 
 # Etc.
 
-* Contributions are very welcome.
+* Contributions like [kadarandras](https://github.com/kadarandras) are very welcome.
 * Attribution is appreciated (let's spread the word!), but not mandatory.
 
 ## Use it? Love/hate it?
