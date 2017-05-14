@@ -1,9 +1,6 @@
-# reference: http://www.objc.io/issue-6/travis-ci.html
-
 language: objective-c
-before_install:
-  - brew update
-  - if brew outdated | grep -qx xctool; then brew upgrade xctool; fi
-  - pod install
+
+osx_image: xcode8.3
+
 script:
-- xctool test -workspace Example/PFLinkedInUtils.xcworkspace -scheme PFLinkedInUtils -sdk iphonesimulator ONLY_ACTIVE_ARCH=NO
+- xcodebuild -workspace Example/PFLinkedInUtils.xcworkspace -scheme PFLinkedInUtils -destination "platform=iOS Simulator,name=iPhone 7,OS=10.3" -configuration Debug -enableCodeCoverage YES clean build test
