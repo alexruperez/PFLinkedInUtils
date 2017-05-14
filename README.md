@@ -4,6 +4,7 @@
 [![Version](https://img.shields.io/cocoapods/v/PFLinkedInUtils.svg?style=flat)](http://cocoadocs.org/docsets/PFLinkedInUtils)
 [![License](https://img.shields.io/cocoapods/l/PFLinkedInUtils.svg?style=flat)](http://cocoadocs.org/docsets/PFLinkedInUtils)
 [![Platform](https://img.shields.io/cocoapods/p/PFLinkedInUtils.svg?style=flat)](http://cocoadocs.org/docsets/PFLinkedInUtils)
+[![Build Status](https://travis-ci.org/alexruperez/PFLinkedInUtils.svg?branch=master)](https://travis-ci.org/alexruperez/PFLinkedInUtils)
 [![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
 [![Analytics](https://ga-beacon.appspot.com/UA-55329295-1/PFLinkedInUtils/readme?pixel)](https://github.com/igrigorik/ga-beacon)
 
