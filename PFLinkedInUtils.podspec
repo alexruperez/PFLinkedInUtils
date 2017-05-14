@@ -23,7 +23,10 @@ Pod::Spec.new do |s|
   s.resource_bundles = {
     'PFLinkedInUtils' => ['Pod/Assets/*.png']
   }
+
+  s.ios.vendored_frameworks = 'Pod/Frameworks/linkedin-sdk.framework'
 	
   s.dependency 'Parse', '~> 1.8'
   s.dependency 'IOSLinkedInAPI', '~> 2.0'
+  s.dependency 'AFNetworking', '~> 2.0'
 end

@@ -17,8 +17,10 @@
 #import "PFAsyncTaskQueue.h"
 #import "PFCommandResult.h"
 #import "PFCoreManager.h"
+#import "PFErrorUtilities.h"
 #import "PFFileController.h"
 #import "PFFileManager.h"
+#import "PFFileStagingController.h"
 #import "PFInternalUtils.h"
 #import "PFMacros.h"
 #import "PFMutableFileState.h"
@@ -27,15 +29,12 @@
 #import "PFUserPrivate.h"
 #import "Parse_Private.h"
 
-static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
-
 @interface PFFile () {
     dispatch_queue_t _synchronizationQueue;
 }
 
 @property (nonatomic, strong, readwrite) PFFileState *state;
 @property (nonatomic, copy, readonly) NSString *stagedFilePath;
-@property (nonatomic, assign, readonly, getter=isDirty) BOOL dirty;
 
 //
 // Private
@@ -46,7 +45,7 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
 
 @implementation PFFile
 
-@synthesize stagedFilePath=_stagedFilePath;
+@synthesize stagedFilePath = _stagedFilePath;
 
 ///--------------------------------------
 #pragma mark - Public
@@ -72,24 +71,20 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
 + (instancetype)fileWithName:(NSString *)name contentsAtPath:(NSString *)path error:(NSError **)error {
     NSFileManager *fileManager = [NSFileManager defaultManager];
     BOOL directory = NO;
-    PFParameterAssert([fileManager fileExistsAtPath:path isDirectory:&directory] && !directory,
-                      @"%@ is not a valid file path for a PFFile.", path);
 
-    NSDictionary *attributess = [fileManager attributesOfItemAtPath:path error:nil];
-    unsigned long long length = [attributess[NSFileSize] unsignedLongValue];
-    PFParameterAssert(length <= PFFileMaxFileSize, @"PFFile cannot be larger than %lli bytes", PFFileMaxFileSize);
+    if (![fileManager fileExistsAtPath:path isDirectory:&directory] || directory) {
+        NSString *message = [NSString stringWithFormat:@"Failed to create PFFile at path '%@': file does not exist.", path];
+        if (error) {
+            *error = [NSError errorWithDomain:NSCocoaErrorDomain
+                                         code:NSFileNoSuchFileError
+                                     userInfo:@{ NSLocalizedDescriptionKey : message }];
+        }
+        return nil;
+    }
 
     PFFile *file = [self fileWithName:name url:nil];
-    if (file) {
-        // Copy the file write away, since we can construct staged file path only from a PFFile.
-        NSError *copyError = nil;
-        [fileManager copyItemAtPath:path toPath:file.stagedFilePath error:&copyError];
-        if (copyError) {
-            if (error) {
-                *error = copyError;
-            }
-            return nil;
-        }
+    if (![file _stageWithPath:path error:error]) {
+        return nil;
     }
     return file;
 }
@@ -107,21 +102,18 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
                         data:(NSData *)data
                  contentType:(NSString *)contentType
                        error:(NSError **)error {
-    PFParameterAssert([data length] <= PFFileMaxFileSize,
-                      @"PFFile cannot be larger than %llu bytes", PFFileMaxFileSize);
+    if (!data) {
+        NSString *message = @"Cannot create a PFFile with nil data.";
+        if (error) {
+            *error = [NSError errorWithDomain:NSCocoaErrorDomain
+                                         code:NSFileNoSuchFileError
+                                     userInfo:@{ NSLocalizedDescriptionKey : message }];
+        }
+        return nil;
+    }
 
     PFFile *file = [[self alloc] initWithName:name urlString:nil mimeType:contentType];
-
-    // Save the file write away, since we can construct staged file path only from a PFFile.
-    NSError *writeError = nil;
-    [[PFFileManager writeDataAsync:data toFile:file.stagedFilePath]
-     waitForResult:&writeError
-     withMainThreadWarning:NO];
-
-    if (writeError) {
-        if (error) {
-            *error = writeError;
-        }
+    if (![file _stageWithData:data error:error]) {
         return nil;
     }
     return file;
@@ -131,23 +123,7 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
     return [self fileWithName:nil data:data contentType:contentType];
 }
 
-#pragma mark Dealloc
-
-- (void)dealloc {
-#if !OS_OBJECT_USE_OBJC
-    dispatch_release(_synchronizationQueue);
-#endif
-}
-
 #pragma mark Uploading
-
-- (BOOL)save {
-    return [self save:nil];
-}
-
-- (BOOL)save:(NSError **)error {
-    return [[[self saveInBackground] waitForResult:error] boolValue];
-}
 
 - (BFTask *)saveInBackground {
     return [self _uploadAsyncWithProgressBlock:nil];
@@ -166,29 +142,7 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
     [[self _uploadAsyncWithProgressBlock:progressBlock] thenCallBackOnMainThreadWithBoolValueAsync:block];
 }
 
-- (void)saveInBackgroundWithTarget:(id)target selector:(SEL)selector {
-    [self saveInBackgroundWithBlock:^(BOOL succeeded, NSError *error) {
-        [PFInternalUtils safePerformSelector:selector withTarget:target object:@(succeeded) object:error];
-    }];
-}
-
 #pragma mark Downloading
-
-- (NSData *)getData {
-    return [self getData:nil];
-}
-
-- (NSInputStream *)getDataStream {
-    return [self getDataStream:nil];
-}
-
-- (NSData *)getData:(NSError **)error {
-    return [[self getDataInBackground] waitForResult:error];
-}
-
-- (NSInputStream *)getDataStream:(NSError **)error {
-    return [[self getDataStreamInBackground] waitForResult:error];
-}
 
 - (BFTask *)getDataInBackground {
     return [self _getDataAsyncWithProgressBlock:nil];
@@ -232,10 +186,26 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
     [[self _getDataStreamAsyncWithProgressBlock:progressBlock] thenCallBackOnMainThreadAsync:resultBlock];
 }
 
-- (void)getDataInBackgroundWithTarget:(id)target selector:(SEL)selector {
-    [self getDataInBackgroundWithBlock:^(NSData *data, NSError *error) {
-        [PFInternalUtils safePerformSelector:selector withTarget:target object:data object:error];
+- (BFTask<NSString *> *)getFilePathInBackground {
+    return [self getFilePathInBackgroundWithProgressBlock:nil];
+}
+
+- (BFTask<NSString *> *)getFilePathInBackgroundWithProgressBlock:(PFProgressBlock)progressBlock {
+    return [[self _downloadAsyncWithProgressBlock:progressBlock] continueWithSuccessBlock:^id(BFTask *task) {
+        if (self.dirty) {
+            return self.stagedFilePath;
+        }
+        return [[[self class] fileController] cachedFilePathForFileState:self.state];
     }];
+}
+
+- (void)getFilePathInBackgroundWithBlock:(nullable PFFilePathResultBlock)block {
+    [[self getFilePathInBackground] thenCallBackOnMainThreadAsync:block];
+}
+
+- (void)getFilePathInBackgroundWithBlock:(nullable PFFilePathResultBlock)block
+                           progressBlock:(nullable PFProgressBlock)progressBlock {
+    [[self getFilePathInBackgroundWithProgressBlock:progressBlock] thenCallBackOnMainThreadAsync:block];
 }
 
 #pragma mark Interrupting
@@ -245,6 +215,20 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
         [self.cancellationTokenSource cancel];
         self.cancellationTokenSource = nil;
     }];
+}
+
+#pragma mark Cache
+
+- (BFTask *)clearCachedDataInBackground {
+    @weakify(self);
+    return [self.taskQueue enqueue:^id(BFTask *_) {
+        @strongify(self);
+        return [[[[self class] fileController] clearFileCacheAsyncForFileWithState:self.state] continueWithSuccessResult:nil];
+    }];
+}
+
++ (BFTask *)clearAllCachedDataInBackground {
+    return [[[self fileController] clearAllFileCacheAsync] continueWithSuccessResult:nil];
 }
 
 ///--------------------------------------
@@ -289,7 +273,7 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
             return [self.taskQueue enqueue:^id(BFTask *task) {
                 if (!self.dirty) {
                     [self _performProgressBlockAsync:progressBlock withProgress:100];
-                    return [BFTask taskWithResult:nil];
+                    return nil;
                 }
 
                 return [self _uploadFileAsyncWithSessionToken:sessionToken
@@ -308,10 +292,9 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
     }
 
     PFFileController *controller = [[self class] fileController];
-    NSString *sourceFilePath = self.stagedFilePath;
     @weakify(self);
     return [[[controller uploadFileAsyncWithState:[self _fileState]
-                                   sourceFilePath:sourceFilePath
+                                   sourceFilePath:self.stagedFilePath
                                      sessionToken:sessionToken
                                 cancellationToken:cancellationToken
                                     progressBlock:progressBlock] continueWithSuccessBlock:^id(BFTask *task) {
@@ -332,13 +315,13 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
 #pragma mark Download
 
 - (BFTask *)_getDataAsyncWithProgressBlock:(PFProgressBlock)progressBlock {
-    return [[self _downloadAsyncWithProgressBlock:progressBlock] continueAsyncWithSuccessBlock:^id(BFTask *task) {
+    return [[self _downloadAsyncWithProgressBlock:progressBlock] continueWithSuccessBlock:^id(BFTask *task) {
         return [self _cachedData];
     }];
 }
 
 - (BFTask *)_getDataStreamAsyncWithProgressBlock:(PFProgressBlock)progressBlock {
-    return [[self _downloadAsyncWithProgressBlock:progressBlock] continueAsyncWithSuccessBlock:^id(BFTask *task) {
+    return [[self _downloadAsyncWithProgressBlock:progressBlock] continueWithSuccessBlock:^id(BFTask *task) {
         return [self _cachedDataStream];
     }];
 }
@@ -352,29 +335,12 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
         cancellationToken = self.cancellationTokenSource.token;
     }];
 
-    return [self _downloadAsyncWithCancellationToken:cancellationToken progressBlock:progressBlock];
-}
-
-- (BFTask *)_downloadStreamAsyncWithProgressBlock:(PFProgressBlock)progressBlock {
-    __block BFCancellationToken *cancellationToken = nil;
-    [self _performDataAccessBlock:^{
-        if (!self.cancellationTokenSource || self.cancellationTokenSource.cancellationRequested) {
-            self.cancellationTokenSource = [BFCancellationTokenSource cancellationTokenSource];
-        }
-        cancellationToken = self.cancellationTokenSource.token;
-    }];
-
-    return [self _downloadStreamAsyncWithCancellationToken:cancellationToken progressBlock:progressBlock];
-}
-
-- (BFTask *)_downloadAsyncWithCancellationToken:(BFCancellationToken *)cancellationToken
-                                  progressBlock:(PFProgressBlock)progressBlock {
     @weakify(self);
     return [self.taskQueue enqueue:^id(BFTask *task) {
         @strongify(self);
-        if (self.isDataAvailable) {
+        if (self.dataAvailable) {
             [self _performProgressBlockAsync:progressBlock withProgress:100];
-            return [BFTask taskWithResult:nil];
+            return nil;
         }
 
         PFFileController *controller = [[self class] fileController];
@@ -389,12 +355,19 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
     }];
 }
 
-- (BFTask *)_downloadStreamAsyncWithCancellationToken:(BFCancellationToken *)cancellationToken
-                                        progressBlock:(PFProgressBlock)progressBlock {
+- (BFTask *)_downloadStreamAsyncWithProgressBlock:(PFProgressBlock)progressBlock {
+    __block BFCancellationToken *cancellationToken = nil;
+    [self _performDataAccessBlock:^{
+        if (!self.cancellationTokenSource || self.cancellationTokenSource.cancellationRequested) {
+            self.cancellationTokenSource = [BFCancellationTokenSource cancellationTokenSource];
+        }
+        cancellationToken = self.cancellationTokenSource.token;
+    }];
+
     @weakify(self);
     return [self.taskQueue enqueue:^id(BFTask *task) {
         @strongify(self);
-        if (self.isDataAvailable) {
+        if (self.dataAvailable) {
             [self _performProgressBlockAsync:progressBlock withProgress:100];
             return [self _cachedDataStream];
         }
@@ -419,12 +392,48 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
 
 - (NSData *)_cachedData {
     NSString *filePath = (self.dirty ? self.stagedFilePath : [self _cachedFilePath]);
+    if (!filePath) {
+        return nil;
+    }
     return [NSData dataWithContentsOfFile:filePath options:NSDataReadingMappedIfSafe error:NULL];
 }
 
 - (NSInputStream *)_cachedDataStream {
     NSString *filePath = (self.dirty ? self.stagedFilePath : [[[self class] fileController] cachedFilePathForFileState:self.state]);
+    if (!filePath) {
+        return nil;
+    }
     return [NSInputStream inputStreamWithFileAtPath:filePath];
+}
+
+///--------------------------------------
+#pragma mark - Staging
+///--------------------------------------
+
+- (BOOL)_stageWithData:(NSData *)data error:(NSError **)error {
+    __block BOOL result = NO;
+    [self _performDataAccessBlock:^{
+        _stagedFilePath = [[[[self class] fileController].fileStagingController stageFileAsyncWithData:data
+                                                                                                  name:self.state.name
+                                                                                              uniqueId:(uintptr_t)self]
+                           waitForResult:error withMainThreadWarning:NO];
+
+        result = (_stagedFilePath != nil);
+    }];
+    return result;
+}
+
+- (BOOL)_stageWithPath:(NSString *)path error:(NSError **)error {
+    __block BOOL result = NO;
+    [self _performDataAccessBlock:^{
+        _stagedFilePath = [[[[self class] fileController].fileStagingController stageFileAsyncAtPath:path
+                                                                                                name:self.state.name
+                                                                                            uniqueId:(uintptr_t)self]
+                           waitForResult:error withMainThreadWarning:NO];
+
+        result = (_stagedFilePath != nil);
+    }];
+    return result;
 }
 
 #pragma mark Data Access
@@ -440,7 +449,7 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
 - (NSString *)url {
     __block NSString *url = nil;
     [self _performDataAccessBlock:^{
-        url = self.state.urlString;
+        url = self.state.secureURLString;
     }];
     return url;
 }
@@ -452,7 +461,8 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
 - (BOOL)isDataAvailable {
     __block BOOL available = NO;
     [self _performDataAccessBlock:^{
-        available = self.dirty || [[NSFileManager defaultManager] fileExistsAtPath:[self _cachedFilePath]];
+        available = ((self.dirty && self.stagedFilePath) ||
+                     (self.url && [[NSFileManager defaultManager] fileExistsAtPath:[self _cachedFilePath]]));
     }];
     return available;
 }
@@ -467,22 +477,6 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
         state = self.state;
     }];
     return state;
-}
-
-- (NSString *)stagedFilePath {
-    // Construct a path in PFFile instead of PFFileController, because we need a pointer to PFFile itself.
-    __block NSString *path = nil;
-    @weakify(self);
-    [self _performDataAccessBlock:^{
-        @strongify(self);
-        if (!_stagedFilePath) {
-            NSString *filename = [NSString stringWithFormat:@"%p_%@", self, self.state.name];
-            NSString *stagedDirectoryPath = [[self class] fileController].stagedFilesDirectoryPath;
-            _stagedFilePath = [stagedDirectoryPath stringByAppendingPathComponent:filename];
-        }
-        path = _stagedFilePath;
-    }];
-    return path;
 }
 
 #pragma mark Progress
@@ -503,6 +497,62 @@ static const unsigned long long PFFileMaxFileSize = 10 * 1024 * 1024; // 10 MB
 
 + (PFFileController *)fileController {
     return [Parse _currentManager].coreManager.fileController;
+}
+
+@end
+
+///--------------------------------------
+#pragma mark - Synchronous
+///--------------------------------------
+
+@implementation PFFile (Synchronous)
+
+#pragma mark Storing Data with Parse
+
+- (BOOL)save {
+    return [self save:nil];
+}
+
+- (BOOL)save:(NSError **)error {
+    return [[[self saveInBackground] waitForResult:error] boolValue];
+}
+
+#pragma mark Getting Data from Parse
+
+- (NSData *)getData {
+    return [self getData:nil];
+}
+
+- (NSData *)getData:(NSError **)error {
+    return [[self getDataInBackground] waitForResult:error];
+}
+
+- (NSInputStream *)getDataStream {
+    return [self getDataStream:nil];
+}
+
+- (NSInputStream *)getDataStream:(NSError **)error {
+    return [[self getDataStreamInBackground] waitForResult:error];
+}
+
+@end
+
+///--------------------------------------
+#pragma mark - Deprecated
+///--------------------------------------
+
+@implementation PFFile (Deprecated)
+
+- (void)saveInBackgroundWithTarget:(nullable id)target selector:(nullable SEL)selector {
+    [self saveInBackgroundWithBlock:^(BOOL succeeded, NSError *error) {
+        [PFInternalUtils safePerformSelector:selector withTarget:target object:@(succeeded) object:error];
+    }];
+}
+
+- (void)getDataInBackgroundWithTarget:(nullable id)target selector:(nullable SEL)selector {
+    [self getDataInBackgroundWithBlock:^(NSData *data, NSError *error) {
+        [PFInternalUtils safePerformSelector:selector withTarget:target object:data object:error];
+    }];
 }
 
 @end

@@ -8,6 +8,7 @@
  */
 
 #import "PFGeoPoint.h"
+#import "PFGeoPointPrivate.h"
 
 #import <math.h>
 
@@ -26,17 +27,17 @@ const double EARTH_RADIUS_KILOMETERS = 6371.0;
 #pragma mark - Init
 ///--------------------------------------
 
-+ (PFGeoPoint *)geoPoint {
++ (instancetype)geoPoint {
     return [[self alloc] init];
 }
 
-+ (PFGeoPoint *)geoPointWithLocation:(CLLocation *)location {
++ (instancetype)geoPointWithLocation:(CLLocation *)location {
     return [self geoPointWithLatitude:location.coordinate.latitude
                             longitude:location.coordinate.longitude];
 }
 
-+ (PFGeoPoint *)geoPointWithLatitude:(double)latitude longitude:(double)longitude {
-    PFGeoPoint *gpt = [PFGeoPoint geoPoint];
++ (instancetype)geoPointWithLatitude:(double)latitude longitude:(double)longitude {
+    PFGeoPoint *gpt = [self geoPoint];
     gpt.latitude = latitude;
     gpt.longitude = longitude;
     return gpt;
@@ -47,7 +48,7 @@ const double EARTH_RADIUS_KILOMETERS = 6371.0;
         return;
     }
 
-    void(^locationHandler)(CLLocation *, NSError *) = ^(CLLocation *location, NSError *error) {
+    void (^locationHandler)(CLLocation *, NSError *) = ^(CLLocation *location, NSError *error) {
         PFGeoPoint *newGeoPoint = [PFGeoPoint geoPointWithLocation:location];
         resultBlock(newGeoPoint, error);
     };
@@ -74,15 +75,14 @@ const double EARTH_RADIUS_KILOMETERS = 6371.0;
     double d2r = M_PI / 180.0; // radian conversion factor
     double lat1rad = self.latitude * d2r;
     double long1rad = self.longitude * d2r;
-    double lat2rad = [point latitude] * d2r;
-    double long2rad = [point longitude] * d2r;
+    double lat2rad = point.latitude * d2r;
+    double long2rad = point.longitude * d2r;
     double deltaLat = lat1rad - lat2rad;
     double deltaLong = long1rad - long2rad;
     double sinDeltaLatDiv2 = sin(deltaLat / 2.);
     double sinDeltaLongDiv2 = sin(deltaLong / 2.);
     // Square of half the straight line chord distance between both points. [0.0, 1.0]
-    double a = sinDeltaLatDiv2 * sinDeltaLatDiv2
-    + cos(lat1rad) * cos(lat2rad) * sinDeltaLongDiv2 * sinDeltaLongDiv2;
+    double a = sinDeltaLatDiv2 * sinDeltaLatDiv2 + cos(lat1rad) * cos(lat2rad) * sinDeltaLongDiv2 * sinDeltaLongDiv2;
     a = fmin(1.0, a);
     return 2. * asin(sqrt(a));
 }
@@ -111,7 +111,7 @@ static NSString *const PFGeoPointCodingLongitudeKey = @"longitude";
              };
 }
 
-+ (PFGeoPoint *)geoPointWithDictionary:(NSDictionary *)dictionary {
++ (instancetype)geoPointWithDictionary:(NSDictionary *)dictionary {
     return [[self alloc] initWithEncodedDictionary:dictionary];
 }
 

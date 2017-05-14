@@ -27,6 +27,7 @@
 #import "PFPushPrivate.h"
 #import "PFQueryPrivate.h"
 #import "Parse_Private.h"
+#import "PFErrorUtilities.h"
 
 @implementation PFInstallation (Private)
 
@@ -51,9 +52,12 @@ static NSSet *protectedKeys;
     [super removeObjectForKey:PFInstallationKeyDeviceToken];
 }
 
-// Check security on delete.
-- (void)checkDeleteParams {
-    PFConsistencyAssert(NO, @"Installations cannot be deleted.");
+- (BFTask<PFVoid> *)_validateDeleteAsync {
+    return [[super _validateDeleteAsync] continueWithSuccessBlock:^id(BFTask<PFVoid> *task) {
+        NSError *error = [PFErrorUtilities errorWithCode:kPFErrorCommandUnavailable
+                                                 message:@"Installation cannot be deleted"];
+        return [BFTask taskWithError:error];
+    }];
 }
 
 // Validates a class name. We override this to only allow the installation class name.
@@ -128,8 +132,11 @@ static NSSet *protectedKeys;
 ///--------------------------------------
 
 + (instancetype)currentInstallation {
-    BFTask *task = [[self _currentInstallationController] getCurrentObjectAsync];
-    return [task waitForResult:nil withMainThreadWarning:NO];
+    return [[self getCurrentInstallationInBackground] waitForResult:nil withMainThreadWarning:NO];
+}
+
++ (BFTask<__kindof PFInstallation *> *)getCurrentInstallationInBackground {
+    return [[self _currentInstallationController] getCurrentObjectAsync];
 }
 
 ///--------------------------------------
@@ -206,28 +213,13 @@ static NSSet *protectedKeys;
      onlyIfDifferent:YES];
 }
 
-- (void)setChannels:(NSArray *)channels {
+- (void)setChannels:(NSArray<NSString *> *)channels {
     [self _setObject:channels forKey:PFInstallationKeyChannels onlyIfDifferent:YES];
 }
 
 ///--------------------------------------
 #pragma mark - PFObject
 ///--------------------------------------
-
-- (BFTask *)saveInBackground {
-    [self _updateAutomaticInfo];
-    return [super saveInBackground];
-}
-
-- (BFTask *)_enqueueSaveEventuallyWithChildren:(BOOL)saveChildren {
-    [self _updateAutomaticInfo];
-    return [super _enqueueSaveEventuallyWithChildren:saveChildren];
-}
-
-- (BFTask *)saveEventually {
-    [self _updateAutomaticInfo];
-    return [super saveEventually];
-}
 
 - (BFTask *)saveAsync:(BFTask *)toAwait {
     return [[super saveAsync:toAwait] continueWithBlock:^id(BFTask *task) {
@@ -257,7 +249,7 @@ static NSSet *protectedKeys;
 #pragma mark - Automatic Info
 ///--------------------------------------
 
-- (void)_updateAutomaticInfo {
+- (void)_objectWillSave {
     if ([self _isCurrentInstallation]) {
         @synchronized(self.lock) {
             [self _updateTimeZoneFromDevice];
@@ -287,7 +279,7 @@ static NSSet *protectedKeys;
 }
 
 - (void)_updateVersionInfoFromDevice {
-    NSDictionary *appInfo = [[NSBundle mainBundle] infoDictionary];
+    NSDictionary *appInfo = [NSBundle mainBundle].infoDictionary;
     NSString *appName = appInfo[(__bridge NSString *)kCFBundleNameKey];
     NSString *appVersion = appInfo[(__bridge NSString *)kCFBundleVersionKey];
     NSString *appIdentifier = appInfo[(__bridge NSString *)kCFBundleIdentifierKey];
@@ -309,10 +301,10 @@ static NSSet *protectedKeys;
     }
 }
 
-/*!
- @abstract Save localeIdentifier in the following format: [language code]-[COUNTRY CODE].
+/**
+ Save localeIdentifier in the following format: [language code]-[COUNTRY CODE].
 
- @discussion The language codes are two-letter lowercase ISO language codes (such as "en") as defined by
+ The language codes are two-letter lowercase ISO language codes (such as "en") as defined by
  <a href="http://en.wikipedia.org/wiki/ISO_639-1">ISO 639-1</a>.
  The country codes are two-letter uppercase ISO country codes (such as "US") as defined by
  <a href="http://en.wikipedia.org/wiki/ISO_3166-1_alpha-3">ISO 3166-1</a>.

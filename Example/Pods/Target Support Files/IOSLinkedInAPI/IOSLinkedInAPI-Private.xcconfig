@@ -1,5 +1,0 @@
-#include "IOSLinkedInAPI.xcconfig"
-GCC_PREPROCESSOR_DEFINITIONS = $(inherited) COCOAPODS=1
-HEADER_SEARCH_PATHS = "${PODS_ROOT}/Headers/Private" "${PODS_ROOT}/Headers/Private/IOSLinkedInAPI" "${PODS_ROOT}/Headers/Public" "${PODS_ROOT}/Headers/Public/AFNetworking" "${PODS_ROOT}/Headers/Public/Bolts" "${PODS_ROOT}/Headers/Public/IOSLinkedInAPI" "${PODS_ROOT}/Headers/Public/PFLinkedInUtils" "${PODS_ROOT}/Headers/Public/Parse"
-PODS_ROOT = ${SRCROOT}
-SKIP_INSTALL = YES

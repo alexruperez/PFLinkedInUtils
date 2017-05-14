@@ -1,5 +1,10 @@
+FRAMEWORK_SEARCH_PATHS = $(inherited) "${PODS_ROOT}/../../Pod/Frameworks"
 GCC_PREPROCESSOR_DEFINITIONS = $(inherited) COCOAPODS=1
 HEADER_SEARCH_PATHS = $(inherited) "${PODS_ROOT}/Headers/Public" "${PODS_ROOT}/Headers/Public/AFNetworking" "${PODS_ROOT}/Headers/Public/Bolts" "${PODS_ROOT}/Headers/Public/IOSLinkedInAPI" "${PODS_ROOT}/Headers/Public/PFLinkedInUtils" "${PODS_ROOT}/Headers/Public/Parse"
+LIBRARY_SEARCH_PATHS = $(inherited) "$PODS_CONFIGURATION_BUILD_DIR/AFNetworking-iOS8.1" "$PODS_CONFIGURATION_BUILD_DIR/Bolts-iOS8.1" "$PODS_CONFIGURATION_BUILD_DIR/IOSLinkedInAPI-iOS8.1" "$PODS_CONFIGURATION_BUILD_DIR/PFLinkedInUtils-iOS8.1" "$PODS_CONFIGURATION_BUILD_DIR/Parse-iOS8.1"
 OTHER_CFLAGS = $(inherited) -isystem "${PODS_ROOT}/Headers/Public" -isystem "${PODS_ROOT}/Headers/Public/AFNetworking" -isystem "${PODS_ROOT}/Headers/Public/Bolts" -isystem "${PODS_ROOT}/Headers/Public/IOSLinkedInAPI" -isystem "${PODS_ROOT}/Headers/Public/PFLinkedInUtils" -isystem "${PODS_ROOT}/Headers/Public/Parse"
-OTHER_LDFLAGS = $(inherited) -ObjC -l"AFNetworking" -l"Bolts" -l"IOSLinkedInAPI" -l"PFLinkedInUtils" -l"Parse" -l"sqlite3" -l"z" -framework "AudioToolbox" -framework "CFNetwork" -framework "CoreGraphics" -framework "CoreLocation" -framework "MobileCoreServices" -framework "QuartzCore" -framework "Security" -framework "StoreKit" -framework "SystemConfiguration" -weak_framework "Accounts" -weak_framework "Social"
+OTHER_LDFLAGS = $(inherited) -ObjC -l"AFNetworking-iOS8.1" -l"Bolts-iOS8.1" -l"IOSLinkedInAPI-iOS8.1" -l"PFLinkedInUtils-iOS8.1" -l"Parse-iOS8.1" -l"sqlite3" -l"z" -framework "AudioToolbox" -framework "CFNetwork" -framework "CoreGraphics" -framework "CoreLocation" -framework "MobileCoreServices" -framework "QuartzCore" -framework "Security" -framework "StoreKit" -framework "SystemConfiguration" -framework "linkedin-sdk" -weak_framework "Accounts" -weak_framework "Social"
+PODS_BUILD_DIR = $BUILD_DIR
+PODS_CONFIGURATION_BUILD_DIR = $PODS_BUILD_DIR/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)
+PODS_PODFILE_DIR_PATH = ${SRCROOT}/.
 PODS_ROOT = ${SRCROOT}/Pods

@@ -114,4 +114,18 @@ extern NSInteger const kPFErrorLinkedInInvalidSession;
  */
 + (BOOL)logOut;
 
+///--------------------------------------
+/// @name Native Login Support
+///--------------------------------------
+/**
+ call this from application:openURL:sourceApplication:annotation: in AppDelegate to check if the callback can be handled by LinkedIn SDK.
+ */
++ (BOOL)shouldHandleUrl:(NSURL *)url;
+
+/**
+ call this from application:openURL:sourceApplication:annotation: in AppDelegate in order to properly handle the callbacks. This must be called only if shouldHandleUrl: returns YES.
+ */
++ (BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation;
+
+
 @end
