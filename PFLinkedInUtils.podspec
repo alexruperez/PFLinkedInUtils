@@ -20,9 +20,6 @@ Pod::Spec.new do |s|
   s.requires_arc = true
 	
   s.source_files = 'Pod/Classes'
-  s.resource_bundles = {
-    'PFLinkedInUtils' => ['Pod/Assets/*.png']
-  }
 
   s.ios.vendored_frameworks = 'Pod/Frameworks/linkedin-sdk.framework'
 	
