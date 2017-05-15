@@ -44,6 +44,71 @@ it, simply add the following line to your Podfile:
 
 To run the example project, clone the repo, and run `pod install` from the Example directory first.
 
+### Setup
+
+You need to create and configure a [LinkedIn app](https://developer.linkedin.com/docs/ios-sdk) and configure your application to be able the use the native LinkedIn app.
+
+#### Info.plist
+
+Replace `{LINKEDIN_APP_ID}` with your LinkedIn app id that your acquired during the LinkedIn app creation.
+
+```xml
+<!--Add a url scheme to your app, so LinkedIn can call back after login-->
+<key>CFBundleURLTypes</key>
+<array>
+	<dict>
+		<key>CFBundleURLSchemes</key>
+		<array>
+			<string>li{LINKEDIN_APP_ID}</string>
+		</array>
+	</dict>
+</array>
+
+<!--Allow the SDK in your app to test for the LinkedIn app URLs-->
+<key>LSApplicationQueriesSchemes</key>
+<array>
+    <string>linkedin</string>
+    <string>linkedin-sdk2</string>
+    <string>linkedin-sdk</string>
+</array>
+
+<!--Allow your app to open the native LinkedIn app-->
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+    <key>NSExceptionDomains</key>
+    <dict>
+        <key>linkedin.com</key>
+        <dict>
+            <key>NSExceptionAllowsInsecureHTTPLoads</key>
+            <true/>
+            <key>NSIncludesSubdomains</key>
+            <true/>
+            <key>NSExceptionRequiresForwardSecrecy</key>
+            <false/>
+        </dict>
+    </dict>
+</dict>
+
+<!--Configure LinkedIn SDK-->
+<key>LIAppId</key>
+<string>{LINKEDIN_APP_ID}</string>
+```
+
+#### AppDelegate
+
+Handle the app callback in your AppDelegate.
+
+```objectivec
+- (BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation {
+    if ([PFLinkedInUtils shouldHandleUrl:url]) {
+        return [PFLinkedInUtils application:application openURL:url sourceApplication:sourceApplication annotation:annotation];
+    }
+    return YES;
+}
+```
+
 ### Example
 
 ```objectivec
