@@ -265,7 +265,7 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
              }
          }];
     } else {
-        [self.linkedInHttpClient GET:[NSString stringWithFormat:@"https://api.linkedin.com/v1/people/~%@?oauth2_access_token=%@&format=json", parameters, accessToken] parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        [self.linkedInHttpClient GET:[NSString stringWithFormat:@"https://api.linkedin.com/v1/people/~%@?oauth2_access_token=%@&format=json", urlParameters, accessToken] parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
             if (block) {
                 block(responseObject, nil);
             }
