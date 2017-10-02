@@ -350,6 +350,12 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
                     
                     PFObject *userObject = [linkedInUser objectForKey:@"user"];
                     [userObject fetchIfNeededInBackgroundWithBlock:^(PFObject *object, NSError *error) {
+                        // Corrupted data error (linkedInUser exists, but user record was removed)
+                        if (error) {
+                            block(nil, error);
+                            return;
+                        }
+                        
                         PFUser *user = (PFUser *)object;
                         [PFUser logInWithUsernameInBackground:user.username password:profileID block:^(PFUser * _Nullable user, NSError * _Nullable error) {
                             // Update linkedInUser data after login
