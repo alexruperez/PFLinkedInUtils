@@ -221,44 +221,63 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
 
 + (void)getProfileIDWithAccessToken:(NSString *)accessToken block:(PFStringResultBlock)block
 {
-    if ([self isUsingNativeAuth]) {
-        [self getProfileIDWithAccessTokenFromNativeApp:block];
-    } else {
-        [self getProfileIDWithAccessTokenFromApiClient:accessToken block:block];
-    }
-}
-    
-+ (void)getProfileIDWithAccessTokenFromNativeApp:(PFStringResultBlock)block
-{
-    NSString *request = [NSString stringWithFormat:@"%@/people/~", LINKEDIN_API_URL];
-    [[LISDKAPIHelper sharedInstance]
-     getRequest:request success:^(LISDKAPIResponse *response) {
-         NSError *jsonError;
-         NSData *objectData = [response.data dataUsingEncoding:NSUTF8StringEncoding];
-         NSDictionary *responseDict = [NSJSONSerialization JSONObjectWithData:objectData
-                                                                      options:NSJSONReadingMutableContainers
-                                                                        error:&jsonError];
-         [self getProfileIDFromResponseDict:responseDict block:block];
-     } error:^(LISDKAPIError *error) {
-         if (block)
-         {
-             block(nil, error);
-         }
-     }];
-}
-    
-+ (void)getProfileIDWithAccessTokenFromApiClient:(NSString *)accessToken block:(PFStringResultBlock)block
-{
-    [self.linkedInHttpClient GET:[NSString stringWithFormat:@"https://api.linkedin.com/v1/people/~?oauth2_access_token=%@&format=json", accessToken] parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
-        [self getProfileIDFromResponseDict:responseObject block:block];
-    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-        if (block)
-        {
+    [self getProfileDetailsDictWithParameters:nil accessToken:accessToken block:^(NSDictionary * _Nullable dict, NSError * _Nullable error) {
+        if (dict) {
+            [self getProfileIDFromResponseDict:dict block:block];
+        } else {
             block(nil, error);
         }
     }];
 }
-    
+
++ (void)getProfileDetailsDictWithParametersArray:(NSArray *_Nullable)parameters block: (PFLResultDictBlock)block
+{
+    NSString *flatParameters = [parameters componentsJoinedByString:@","];
+    [self getProfileDetailsDictWithParameters:flatParameters block:block];
+}
+
++ (void)getProfileDetailsDictWithParameters:(NSString *)parameters block: (PFLResultDictBlock)block {
+    return [self getProfileDetailsDictWithParameters:parameters
+                                         accessToken:[self currentAccessToken]
+                                               block:block];
+}
+
++ (void)getProfileDetailsDictWithParameters:(NSString *)parameters accessToken:(NSString *)accessToken block: (PFLResultDictBlock)block {
+    NSString *urlParameters = parameters
+    ? [NSString stringWithFormat:@":(%@)", parameters]
+    : @"";
+    if ([self isUsingNativeAuth]) {
+        NSString *request = [NSString stringWithFormat:@"%@/people/~%@", LINKEDIN_API_URL, urlParameters];
+        [[LISDKAPIHelper sharedInstance]
+         getRequest:request success:^(LISDKAPIResponse *response) {
+             NSError *jsonError;
+             NSData *objectData = [response.data dataUsingEncoding:NSUTF8StringEncoding];
+             NSDictionary *responseDict = [NSJSONSerialization JSONObjectWithData:objectData
+                                                                          options:NSJSONReadingMutableContainers
+                                                                            error:&jsonError];
+             if (block) {
+                 block(responseDict, nil);
+             }
+         } error:^(LISDKAPIError *error) {
+             if (block)
+             {
+                 block(nil, error);
+             }
+         }];
+    } else {
+        [self.linkedInHttpClient GET:[NSString stringWithFormat:@"https://api.linkedin.com/v1/people/~%@?oauth2_access_token=%@&format=json", parameters, accessToken] parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+            if (block) {
+                block(responseObject, nil);
+            }
+        } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+            if (block)
+            {
+                block(nil, error);
+            }
+        }];
+    }
+}
+
 + (void)getProfileIDFromResponseDict:(NSDictionary *)responseDict block:(PFStringResultBlock)block {
     NSLog(@"User data: %@", responseDict);
     

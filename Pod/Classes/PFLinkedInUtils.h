@@ -20,6 +20,8 @@ extern NSInteger const kPFErrorLinkedInIdMissing;
 /*! @abstract 351: Invalid LinkedIn session */
 extern NSInteger const kPFErrorLinkedInInvalidSession;
 
+typedef void (^PFLResultDictBlock)(NSDictionary *_Nullable dict, NSError *_Nullable error);
+
 /*!
  The `PFLinkedInUtils` class provides utility functions for working with LinkedIn in a Parse application.
  
@@ -75,6 +77,21 @@ extern NSInteger const kPFErrorLinkedInInvalidSession;
  It should have the following argument signature: `^(PFUser *user, NSError *error)`.
  */
 + (void)logInWithBlock:(PFUserResultBlock)block;
+
+///--------------------------------------
+/// @name Creating a LinkedIn API GET request
+///--------------------------------------
+
+/*!
+ @abstract *Asynchronously* gets profile details using LinkedIn.
+ 
+ @discussion This method uses the already logged in LinkedIn user to initiate a profile request.
+ 
+ @param parameters The string parameters, nil if not applicable.
+ @param block The block to execute with the result dict / error.
+ It should have the following argument signature: `^(NSDictionary *dict, NSError *error)`.
+ */
++ (void)getProfileDetailsDictWithParametersArray:(NSArray *_Nullable)parameters block: (PFLResultDictBlock)block;
 
 ///--------------------------------------
 /// @name Linking Users with LinkedIn
