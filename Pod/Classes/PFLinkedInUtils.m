@@ -179,7 +179,7 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
          if (block)
          {
              LISDKSession *session = [[LISDKSessionManager sharedInstance] session];
-             block(session.accessToken.serializedString, nil);
+             block(session.accessToken.accessTokenValue, nil);
          }
      } errorBlock:^(NSError *error) {
          if (error.code == LINKEDIN_APP_NOT_FOUND) {
@@ -328,10 +328,17 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
                 else
                 {
                     PFObject *linkedInUser = objects.firstObject;
+                    
                     PFObject *userObject = [linkedInUser objectForKey:@"user"];
                     [userObject fetchIfNeededInBackgroundWithBlock:^(PFObject *object, NSError *error) {
                         PFUser *user = (PFUser *)object;
-                        [PFUser logInWithUsernameInBackground:user.username password:profileID block:block];
+                        [PFUser logInWithUsernameInBackground:user.username password:profileID block:^(PFUser * _Nullable user, NSError * _Nullable error) {
+                            // Update linkedInUser data after login
+                            linkedInUser[@"accessToken"] = accessToken;
+                            linkedInUser[@"expirationDate"] = expirationDate;
+                            [linkedInUser saveEventually];
+                            block(user, error);
+                        }];
                     }];
                 }
             }
@@ -471,14 +478,21 @@ NSString *kPFLinkedInCreationKey = @"linkedin_token_created_at";
     return randomString;
 }
 
++ (NSString *)currentAccessToken {
+    return [[LISDKSessionManager sharedInstance] session].accessToken.accessTokenValue
+    ?: [self.linkedInHttpClient accessToken];
+}
+
 + (NSString *)linkedInAccessToken
 {
-    return [[NSUserDefaults standardUserDefaults] stringForKey:kPFLinkedInTokenKey];
+    return [self currentAccessToken]
+    ?: [[NSUserDefaults standardUserDefaults] stringForKey:kPFLinkedInTokenKey];
 }
 
 + (NSDate *)linkedInAccessTokenExpirationDate
 {
-    return [NSDate dateWithTimeIntervalSince1970:([[NSUserDefaults standardUserDefaults] doubleForKey:kPFLinkedInCreationKey] + [[NSUserDefaults standardUserDefaults] doubleForKey:kPFLinkedInExpirationKey])];
+    return [[LISDKSessionManager sharedInstance] session].accessToken.expiration
+    ?: [NSDate dateWithTimeIntervalSince1970:([[NSUserDefaults standardUserDefaults] doubleForKey:kPFLinkedInCreationKey] + [[NSUserDefaults standardUserDefaults] doubleForKey:kPFLinkedInExpirationKey])];
 }
 
 @end
